@@ -19,8 +19,16 @@
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
 sudo apt-get update
-sudo apt-get install -y libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev libcairo2 libcairo2-dev
+sudo apt-get install -y libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
 
+# This would be ideal way to install pdfparser but some cairo-specific headers
+# are just not included in any of poppler related packages
+# sudo apt-get install -y libpoppler-dev libpoppler-private-dev libpoppler-glib-dev python-cairo-dev
+# python setup.py install
+
+# Uncomment and run this if you want to used latest (bleeding-edge)
+# versions of pycairo/poppler.
+sudo apt-get install -y libcairo2 libcairo2-dev
 git clone --depth 1 https://anongit.freedesktop.org/git/poppler/poppler.git
 git clone https://github.com/pygobject/pycairo.git
 
@@ -32,7 +40,7 @@ cp libpoppler.so.?? ../pdfparser/
 cp glib/libpoppler-glib.so.? ../pdfparser/
 
 cd ../pycairo
-sudo python setup.py install
+python setup.py install
 cd ..
 
-python setup.py install
+POPPLER_CAIRO_ROOT='.' python setup.py install
