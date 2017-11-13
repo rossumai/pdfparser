@@ -33,3 +33,6 @@ cp glib/libpoppler-glib.so.? ../pdfparser/
 
 cd ../pycairo
 sudo python setup.py install
+cd ..
+
+python setup.py install
