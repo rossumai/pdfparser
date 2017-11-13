@@ -1,81 +1,43 @@
 #!/usr/bin/env python
-from __future__ import print_function
+#
+# This file is part of pdfparser.
+#
+# pdfparse is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Foobar is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Original version by Ivan Zderadicka  (https://github.com/izderadicka/pdfparser)
+# Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
-import os
-import subprocess
-import sys
+from __future__ import print_function
 
 from setuptools import Extension, setup
 
 try:
     from Cython.Build import cythonize
 except ImportError:
+    import sys
     print('You need to install cython first - sudo pip install cython', file=sys.stderr)
     sys.exit(1)
 
+poppler_ext = Extension('pdfparser.poppler', ['pdfparser/poppler.pyx'], language='c++',
+                        extra_compile_args=["-std=c++11"],
+                        include_dirs=['poppler', 'poppler/poppler', 'pycairo/cairo/', '/usr/include/cairo',
+                                      '/usr/include/freetype2'],
+                        library_dirs=['poppler', 'poppler/glib'],
+                        libraries=['poppler', 'poppler-glib'],
+                        runtime_library_dirs=['$ORIGIN'])
 
-# https://gist.github.com/smidm/ff4a2c079fed97a92e9518bd3fa4797c
-def pkgconfig(*packages, **kw):
-    """
-    Query pkg-config for library compile and linking options. Return configuration in distutils
-    Extension format.
-
-    Usage:
-
-    pkgconfig('opencv')
-
-    pkgconfig('opencv', 'libavformat')
-
-    pkgconfig('opencv', optional='--static')
-
-    pkgconfig('opencv', config=c)
-
-    returns e.g.
-
-    {'extra_compile_args': [],
-     'extra_link_args': [],
-     'include_dirs': ['/usr/include/ffmpeg'],
-     'libraries': ['avformat'],
-     'library_dirs': []}
-
-     Intended use:
-
-     distutils.core.Extension('pyextension', sources=['source.cpp'], **c)
-
-     Set PKG_CONFIG_PATH environment variable for nonstandard library locations.
-
-    based on work of Micah Dowty (http://code.activestate.com/recipes/502261-python-distutils-pkg-config/)
-    """
-    config = kw.setdefault('config', {})
-    optional_args = kw.setdefault('optional', '')
-    # { <distutils Extension arg>: [<pkg config option>, <prefix length to strip>], ...}
-    flag_map = {'include_dirs': ['--cflags-only-I', 2],
-                'library_dirs': ['--libs-only-L', 2],
-                'libraries': ['--libs-only-l', 2],
-                'extra_compile_args': ['--cflags-only-other', 0],
-                'extra_link_args': ['--libs-only-other', 0],
-                }
-    for package in packages:
-        for distutils_key, (pkg_option, n) in flag_map.items():
-            items = subprocess.check_output(['pkg-config', optional_args, pkg_option, package]).decode('utf8').split()
-            config.setdefault(distutils_key, []).extend([i[n:] for i in items])
-    return config
-
-POPPLER_ROOT = os.environ.get('POPPLER_ROOT', None)
-if POPPLER_ROOT:
-    POPPLER_LIB_DIR = os.path.join(POPPLER_ROOT, 'poppler/.libs/')
-    poppler_ext = Extension('pdfparser.poppler', ['pdfparser/poppler.pyx'], language='c++',
-                            extra_compile_args=["-std=c++11"],
-                            include_dirs=[POPPLER_ROOT, os.path.join(POPPLER_ROOT, 'poppler')],
-                            library_dirs=[POPPLER_LIB_DIR],
-                            runtime_library_dirs=['$ORIGIN'],
-                            libraries=['poppler'])
-    package_data = {'pdfparser': ['*.so.*', 'pdfparser/*.so.*']}
-else:
-    poppler_config = pkgconfig("poppler")
-    poppler_ext = Extension('pdfparser.poppler', ['pdfparser/poppler.pyx'], language='c++', **poppler_config)
-    package_data = {}
-
+package_data = {'pdfparser': ['*.so.*']}
 
 setup(name='pdfparser',
       version='0.1.1',
@@ -100,8 +62,8 @@ setup(name='pdfparser',
       long_description="Binding for libpoppler with a focus on fast text extraction from PDF documents.",
       keywords='poppler pdf parsing mining extracting',
       url='https://github.com/izderadicka/pdfparser',
-      install_requires=['cython', ],
-      packages=['pdfparser', ],
+      install_requires=['cython'],
+      packages=['pdfparser'],
       package_data=package_data,
       include_package_data=True,
       ext_modules=cythonize(poppler_ext),
