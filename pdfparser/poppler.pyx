@@ -52,8 +52,20 @@ cdef extern from 'Annot.h':
         pass
 
 
+cdef extern from 'Gfx.h':
+    cdef cppclass Gfx:
+        pass
+
+
+cdef extern from 'XRef.h':
+    cdef cppclass XRef:
+        pass
+
+
 cdef extern from "PDFDoc.h":
     cdef cppclass PDFDoc:
+        GBool isOk()
+        int getErrorCode()
         int getNumPages()
         void displayPage(OutputDev *out, int page, double hDPI, double vDPI,
                          int rotate, GBool useMediaBox, GBool crop, GBool printing,
@@ -63,7 +75,21 @@ cdef extern from "PDFDoc.h":
                          void *annotDisplayDecideCbkData = NULL, GBool copyXRef = False)
         double getPageMediaWidth(int page)
         double getPageMediaHeight(int page)
+        Page *getPage(int page);
 
+
+cdef extern from "Page.h":
+    cdef cppclass PDFRectangle:
+        double x1, y1, x2, y2;
+
+    cdef cppclass Page:
+        Gfx *createGfx(OutputDev *out, double hDPI, double vDPI,
+                       int rotate, GBool useMediaBox, GBool crop,
+                       int sliceX, int sliceY, int sliceW, int sliceH, GBool printing,
+                       GBool (*abortCheckCbk)(void *data),
+                       void *abortCheckCbkData, XRef *xrefA = NULL)
+        void display(Gfx *gfx)
+        PDFRectangle *getCropBox()
 
 cdef extern from "PDFDocFactory.h":
     cdef cppclass PDFDocFactory:
@@ -141,13 +167,21 @@ cdef extern from "CairoFontEngine.h":
 
 
 cdef extern from "CairoOutputDev.h":
+    cdef cppclass CairoImage:
+        void getRect(double *x1, double *y1, double *x2, double *y2)
+
+    cdef cppclass CairoImageOutputDev:
+        CairoImageOutputDev()
+        CairoImage *getImage(int i)
+        int getNumImages()
+
     cdef cppclass CairoOutputDev:
         CairoOutputDev()
         void setCairo(cairo_t *cr)
         void startDoc(PDFDoc *docA, CairoFontEngine *parentFontEngine)
 
 
-cdef class Document:
+cdef class PopplerDocument:
     cdef PDFDoc *document
 
     # Maintain (as best as possible) the original physical layout
@@ -161,15 +195,48 @@ cdef class Document:
     cdef double fixed_pitch
 
     cdef void render_page_into_device(self, OutputDev *device, int page_number, hDPI=72, vDPI=72, printing=False):
-        self.document.displayPage(device, page_number, hDPI, vDPI, 0, True, False, printing)
+        self.document.displayPage(device, page_number + 1, hDPI, vDPI, 0, True, False, printing)
 
     cdef object get_page_size(self, page_number):
-        cdef double width = self.document.getPageMediaWidth(page_number)
-        cdef double height = self.document.getPageMediaHeight(page_number)
+        cdef double width = self.document.getPageMediaWidth(page_number + 1)
+        cdef double height = self.document.getPageMediaHeight(page_number + 1)
         return (width, height)
+
+    def get_images_bboxes(self, page_number):
+        cdef CairoImageOutputDev *image_device = new CairoImageOutputDev()
+        cdef Page *page = self.document.getPage(page_number + 1)
+
+        cdef Gfx *gfx = page.createGfx(<OutputDev *> image_device, 72.0, 72.0, 0, False, True, -1, -1, -1, -1, False, NULL, NULL)
+        cdef CairoImage *image
+        cdef double x1, x2, y1, y2
+        cdef int i
+        cdef list images_bboxes = []
+
+        page.display(gfx)
+        del gfx
+
+        for i in range(image_device.getNumImages()):
+            image = image_device.getImage(i)
+            image.getRect(&x1, &y1, &x2, &y2);
+
+            x1 -= page.getCropBox().x1;
+            y1 -= page.getCropBox().y1;
+            x2 -= page.getCropBox().x1;
+            y2 -= page.getCropBox().y1;
+
+            images_bboxes.append(BBox(x1, y1, x2, y2))
+
+        del image_device
+
+        return images_bboxes
 
     def __cinit__(self, char *filename, PyBool keep_physical_layout=False, double fixed_pitch=0.0):
         self.document = PDFDocFactory().createPDFDoc(GooString(filename))
+        if not self.document.isOk():
+            error_code = self.document.getErrorCode()
+            del self.document
+            self.document = NULL
+            raise RuntimeError('could not open document %s (error code: %d)' % (filename, error_code))
         self.keep_physical_layout = keep_physical_layout
         self.fixed_pitch = fixed_pitch
 
@@ -184,7 +251,7 @@ cdef class Document:
         return DocumentPageIterator(self)
 
     def get_page(self, int page_number):
-        return Page(self, page_number)
+        return PopplerPage(self, page_number)
 
     def render_page(self, context, page_number, hDPI=72.0, vDPI=72.0, printing=False):
         '''
@@ -228,27 +295,27 @@ cdef class Document:
 
 cdef class DocumentPageIterator:
     cdef:
-        Document document
+        PopplerDocument document
         int page_number
 
-    def __cinit__(self, Document document):
+    def __cinit__(self, PopplerDocument document):
         self.document = document
-        self.page_number = 0
+        self.page_number = -1
 
     def __next__(self):
+        self.page_number += 1
         if self.page_number >= self.document.page_count():
             raise StopIteration()
-        self.page_number += 1
         return self.document.get_page(self.page_number)
 
 
-cdef class Page:
+cdef class PopplerPage:
     cdef:
-        Document document
+        PopplerDocument document
         int page_number
         TextPage *page
 
-    def __cinit__(self, Document document, int page_number):
+    def __cinit__(self, PopplerDocument document, int page_number):
         cdef TextOutputDev * device
 
         device = new TextOutputDev(NULL, document.keep_physical_layout, document.fixed_pitch, False, False);
@@ -267,6 +334,29 @@ cdef class Page:
     def __iter__(self):
         return FlowsIterator(self)
 
+    def render(self, context, hDPI=72.0, vDPI=72.0, printing=False):
+        '''
+        Render a page into `cairo.Context` with the given resolution.
+
+        Parameters
+        ----------
+        context : cairo.Context
+            The cairo context into which the page is rendered.
+
+        hDPI : float
+            The horizontal resolution to render the page with.
+
+        vDPI : float
+            The vertical resolution to render the page with.
+
+        printing : bool
+            Set the rendering into printing mode.
+        '''
+        self.document.render_page(context, self.page_number, hDPI, vDPI, printing)
+
+    def get_images_bboxes(self):
+        return self.document.get_images_bboxes(self.page_number)
+
     property page_number:
         '''
         The page number within the document containing it.
@@ -284,7 +374,7 @@ cdef class Page:
     cdef TextFlow *getFlows(self):
         return self.page.getFlows()
 
-    def getText(self, bbox=None):
+    def get_text(self, bbox=None):
         cdef GooString *text
 
         if bbox is None:
@@ -301,10 +391,10 @@ cdef class Page:
 
 
 cdef class FlowsIterator:
-    cdef Page page
+    cdef PopplerPage page
     cdef TextFlow *flows
 
-    def __cinit__(self, Page page):
+    def __cinit__(self, PopplerPage page):
         self.page = page
         self.flows = page.getFlows()
 
@@ -320,10 +410,10 @@ cdef class FlowsIterator:
 
 
 cdef class Flow:
-    cdef Page page
+    cdef PopplerPage page
     cdef TextFlow *flow
 
-    def __cinit__(self, Page page):
+    def __cinit__(self, PopplerPage page):
         self.page = page
         self.flow = NULL
 
@@ -342,10 +432,10 @@ cdef class Flow:
 
 
 cdef class BlocksIterator:
-    cdef Page page
+    cdef PopplerPage page
     cdef TextBlock *blocks
 
-    def __cinit__(self, Page page, Flow flow):
+    def __cinit__(self, PopplerPage page, Flow flow):
         self.page = page
         self.blocks = flow.getBlocks()
 
@@ -361,10 +451,10 @@ cdef class BlocksIterator:
 
 
 cdef class Block:
-    cdef Page page
+    cdef PopplerPage page
     cdef TextBlock *block
 
-    def __cinit__(self, Page page):
+    def __cinit__(self, PopplerPage page):
         self.page = page
         self.block = NULL
 
@@ -393,10 +483,10 @@ cdef class Block:
 
 
 cdef class LinesIterator:
-    cdef Page page
+    cdef PopplerPage page
     cdef TextLine *lines
 
-    def __cinit__(self, Page page, Block block):
+    def __cinit__(self, PopplerPage page, Block block):
         self.page = page
         self.lines = block.getLines()
 
@@ -413,14 +503,14 @@ cdef class LinesIterator:
 
 cdef class Line:
     cdef:
-        Page page
+        PopplerPage page
         TextLine *line
         double x1, y1, x2, y2
         unicode _text
         list _bboxes
         CompactList _fonts
 
-    def __cinit__(self, Page page):
+    def __cinit__(self, PopplerPage page):
         self.page = page
         self.line = NULL
 
