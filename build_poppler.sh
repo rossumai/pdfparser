@@ -47,7 +47,7 @@ POPPLER_CAIRO_ROOT='.' python setup.py install
 
 # build a source and binary package
 POPPLER_CAIRO_ROOT='.' python setup.py sdist
-POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel --universal
+POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel
 # can be installed with: pip install dist/*.whl
 # publishing:
 # $ pip install twine
