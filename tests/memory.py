@@ -13,9 +13,9 @@ test_doc=os.path.join(os.path.dirname(__file__), '../test_docs/test1.pdf')
 start_mem=get_mem()
 for counti in range(10000):
     imem=get_mem()
-    
-    d=pdf.Document(test_doc)
-    
+
+    d=pdf.PopplerDocument(test_doc)
+
     pages=d.no_of_pages
     for p in d:
         pg_info= p.page_no, p.size
