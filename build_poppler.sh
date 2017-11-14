@@ -45,4 +45,17 @@ cd ..
 
 POPPLER_CAIRO_ROOT='.' python setup.py install
 
+# build a source and binary package
+POPPLER_CAIRO_ROOT='.' python setup.py sdist
+POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel --universal
+# can be installed with: pip install dist/*.whl
+# publishing:
+# $ pip install twine
+### test PyPI:
+# twine upload twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+### test install:
+# pip install --verbose --index-url https://test.pypi.org/simple/ pdfparser
+### production PyPI;
+# twine upload twine upload dist/*
+
 rm -rf poppler pycairo
