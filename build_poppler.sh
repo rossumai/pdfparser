@@ -7,13 +7,13 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# pdfparser is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with pdfparser.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Original version by Ivan Zderadicka  (https://github.com/izderadicka/pdfparser)
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
@@ -21,16 +21,16 @@
 sudo apt-get update
 sudo apt-get install -y libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
 
+pip install -r requirements.txt
+
 # This would be ideal way to install pdfparser but some cairo-specific headers
 # are just not included in any of poppler related packages
 # sudo apt-get install -y libpoppler-dev libpoppler-private-dev libpoppler-glib-dev python-cairo-dev
 # python setup.py install
 
-# Uncomment and run this if you want to used latest (bleeding-edge)
-# versions of pycairo/poppler.
 sudo apt-get install -y libcairo2 libcairo2-dev
-git clone --depth 1 https://anongit.freedesktop.org/git/poppler/poppler.git
-git clone https://github.com/pygobject/pycairo.git
+git clone --depth 1 --branch poppler-0.61.1 https://anongit.freedesktop.org/git/poppler/poppler.git
+git clone --depth 1 --branch v1.15.4 https://github.com/pygobject/pycairo.git
 
 cd poppler
 cmake -DCMAKE_BUILD_TYPE=release -DENABLE_CPP=OFF -DENABLE_GLIB=ON -DENABLE_QT4=OFF -DENABLE_QT5=OFF  -DBUILD_GTK_TESTS=OFF -DENABLE_SPLASH=OFF -DENABLE_UTILS=OFF
@@ -44,3 +44,5 @@ python setup.py install
 cd ..
 
 POPPLER_CAIRO_ROOT='.' python setup.py install
+
+rm -rf poppler pycairo
