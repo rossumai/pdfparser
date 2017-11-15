@@ -13,7 +13,7 @@ p.add_argument('-l', '--last-page', type=int, help='first page')
 p.add_argument('--phys-layout', action='store_true', help='Physical Layout - param for text analysis')
 p.add_argument('--fixed-pitch', type=float, default=0.0, help='Fixed pitch - param for text analysis - app. max space size')
 args=p.parse_args()
-d=pdf.Document(args.document, args.phys_layout, args.fixed_pitch)  # @UndefinedVariable
+d=pdf.PopplerDocument(args.document, args.phys_layout, args.fixed_pitch)  # @UndefinedVariable
 fp=args.first_page or 1
 lp=args.last_page or d.no_of_pages
 print 'No of pages', d.no_of_pages

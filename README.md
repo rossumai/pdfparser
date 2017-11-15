@@ -3,7 +3,7 @@ pdfparser
 
 Python binding for libpoppler - focused on text extration from PDF documents.
 
-Intended as an easy to use replacemnt for [pdfminer](https://github.com/euske/pdfminer), 
+Intended as an easy to use replacement for [pdfminer](https://github.com/euske/pdfminer),
 which provides much better perfomance (see below for short comparison) and is Python3 compatible.
 
 See this [article](http://zderadicka.eu/parsing-pdf-for-fun-and-profit-indeed-in-python/)
@@ -93,9 +93,9 @@ pdfparser code used in test
 
     import pdfparser.poppler as pdf
     import sys
-    
-    d=pdf.Document(sys.argv[1])
-    
+
+    d=pdf.PopplerDocument(sys.argv[1])
+
     print('No of pages', d.no_of_pages)
     for p in d:
         print('Page', p.page_no, 'size =', p.size)
