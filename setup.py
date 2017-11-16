@@ -107,8 +107,8 @@ else:
     poppler_cairo_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
 
 setup(name='pdfparser',
-      version='0.1.1',
-      classifiers=['Development Status :: 4 - Beta',
+      version='1.0.0',
+      classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',
                    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
