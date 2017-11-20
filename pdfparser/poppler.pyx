@@ -67,12 +67,13 @@ cdef extern from "PDFDoc.h":
         GBool isOk()
         int getErrorCode()
         int getNumPages()
-        void displayPage(OutputDev *out, int page, double hDPI, double vDPI,
-                         int rotate, GBool useMediaBox, GBool crop, GBool printing,
-                         GBool (*abortCheckCbk)(void *data) = NULL,
-                         void *abortCheckCbkData = NULL,
-                         GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
-                         void *annotDisplayDecideCbkData = NULL, GBool copyXRef = False)
+        void displayPageSlice(OutputDev *out, int page, double hDPI, double vDPI,
+                              int rotate, GBool useMediaBox, GBool crop, GBool printing,
+                              int sliceX, int sliceY, int sliceW, int sliceH,
+                              GBool (*abortCheckCbk)(void *data) = NULL,
+                              void *abortCheckCbkData = NULL,
+                              GBool (*annotDisplayDecideCbk)(Annot *annot, void *user_data) = NULL,
+                              void *annotDisplayDecideCbkData = NULL, GBool copyXRef = False)
         double getPageMediaWidth(int page)
         double getPageMediaHeight(int page)
         Page *getPage(int page);
@@ -194,8 +195,11 @@ cdef class PopplerDocument:
     # mode.
     cdef double fixed_pitch
 
-    cdef void render_page_into_device(self, OutputDev *device, int page_number, hDPI=72, vDPI=72, printing=False):
-        self.document.displayPage(device, page_number + 1, hDPI, vDPI, 0, True, False, printing)
+    cdef void render_page_into_device(self, OutputDev *device, int page_number, double hDPI=72,
+                                      double vDPI=72, GBool printing=False, GBool crop=False,
+                                      int sliceX=-1, int sliceY=-1, int sliceW=-1, int sliceH=-1):
+        self.document.displayPageSlice(device, page_number + 1, hDPI, vDPI, 0, True, crop, printing,
+                                       sliceX, sliceY, sliceW, sliceH)
 
     cdef object get_page_size(self, page_number):
         cdef double width = self.document.getPageMediaWidth(page_number + 1)
@@ -253,7 +257,7 @@ cdef class PopplerDocument:
     def get_page(self, int page_number):
         return PopplerPage(self, page_number)
 
-    def render_page(self, context, page_number, hDPI=72.0, vDPI=72.0, printing=False):
+    def render_page(self, context, page_number, hDPI=72.0, vDPI=72.0, printing=False, crop=None):
         '''
         Render a page into `cairo.Context` with the given resolution.
 
@@ -273,12 +277,29 @@ cdef class PopplerDocument:
 
         printing : bool
             Set the rendering into printing mode.
+
+        crop : tuple of int or None
+            If not None, only the specified rectangular region from the page
+            is rendered, otherwise, the whole page is rendered. The format
+            of crop is (left, top, bottom, right).
         '''
         # See https://www.cairographics.org/cookbook/renderpdf/
         cdef CairoOutputDev *device
         cdef cairo_t *cairo
+        cdef int sliceX = -1, sliceY = -1, sliceW = -1, sliceH = -1
 
         cairo = (<PycairoContext *> context).ctx
+
+        if crop is not None:
+            sliceX, sliceY, sliceW, sliceH = crop
+            # (right, bottom) -> (width, height)
+            sliceW -= sliceX
+            sliceH -= sliceY
+            # scale
+            sliceX *= hDPI / 72.0
+            sliceY *= vDPI / 72.0
+            sliceW *= hDPI / 72.0
+            sliceH *= vDPI / 72.0
 
         # See poppler/glib/poppler-document.cc:134-135 - creation of CairoOutputDev for a document
         device = new CairoOutputDev()
@@ -286,8 +307,9 @@ cdef class PopplerDocument:
 
         # See poppler/glib/poppler-page.cc:341-343 - setting of CairoOutputDev before a page is rendered
         device.setCairo(cairo)
-        cairo_save (cairo)
-        self.render_page_into_device(<OutputDev *> device, page_number, hDPI, vDPI, printing)
+        cairo_save(cairo)
+        self.render_page_into_device(<OutputDev *> device, page_number, hDPI, vDPI, printing,
+                                     crop is not None, sliceX, sliceY, sliceW, sliceH)
         cairo_restore(cairo)
 
         del device
@@ -334,7 +356,7 @@ cdef class PopplerPage:
     def __iter__(self):
         return FlowsIterator(self)
 
-    def render(self, context, hDPI=72.0, vDPI=72.0, printing=False):
+    def render(self, context, hDPI=72.0, vDPI=72.0, printing=False, crop=None):
         '''
         Render a page into `cairo.Context` with the given resolution.
 
@@ -351,8 +373,13 @@ cdef class PopplerPage:
 
         printing : bool
             Set the rendering into printing mode.
+
+        crop : tuple of int or None
+            If not None, only the specified rectangular region from the page
+            is rendered, otherwise, the whole page is rendered. The format
+            of crop is (left, top, bottom, right).
         '''
-        self.document.render_page(context, self.page_number, hDPI, vDPI, printing)
+        self.document.render_page(context, self.page_number, hDPI, vDPI, printing, crop)
 
     def get_images_bboxes(self):
         return self.document.get_images_bboxes(self.page_number)
