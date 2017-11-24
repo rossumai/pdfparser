@@ -182,6 +182,19 @@ cdef extern from "CairoOutputDev.h":
         void startDoc(PDFDoc *docA, CairoFontEngine *parentFontEngine)
 
 
+ERROR_CODE_MESSAGES = {0: 'no error',
+                       1: "couldn't open the PDF file",
+                       2: "couldn't read the page catalog",
+                       3: "PDF file was damaged and couldn't be repaired",
+                       4: 'file was encrypted and password was incorrect or not supplied',
+                       5: 'nonexistent or invalid highlight file',
+                       6: 'invalid printer',
+                       7: 'error during printing',
+                       8: "PDF file doesn't allow that operation",
+                       9: 'invalid page number',
+                       10: 'file I/O error'}
+
+
 cdef class PopplerDocument:
     cdef PDFDoc *document
 
@@ -240,7 +253,8 @@ cdef class PopplerDocument:
             error_code = self.document.getErrorCode()
             del self.document
             self.document = NULL
-            raise RuntimeError('could not open document %s (error code: %d)' % (filename, error_code))
+            raise RuntimeError('could not open document %s (error code: %d, message: %s)'
+                               % (filename, error_code, ERROR_CODE_MESSAGES.get(error_code, 'none')))
         self.keep_physical_layout = keep_physical_layout
         self.fixed_pitch = fixed_pitch
 
