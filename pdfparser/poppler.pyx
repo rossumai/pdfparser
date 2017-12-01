@@ -570,7 +570,7 @@ cdef class Line:
     def _get_text(self):
         cdef:
             TextWord *word
-            GooString *s
+            GooString *_word_text
             double bx1, bx2, by1, by2
             list words = []
             int i, word_length
@@ -582,10 +582,27 @@ cdef class Line:
 
         while word:
             word_length = word.getLength()
-            assert word_length > 0
+            assert word_length > 0, 'a word must contain at least one character'
+
+            _word_text = word.getText()
+            word_text = _word_text.getCString().decode('UTF-8')
+            del _word_text
+
+            # TT: Some characters (typically accented) break poppler in certain PDF - they show up as single
+            #     letter words containing 'nothing'. Any method that provides information about the words
+            #     characters results in SEGV!!!
+            if len(word_text) == 1 and ord(word_text[0]) in (0, 1, 2, 3, 4, 5, 6):
+                # print 'BAD CHARACTER CODE:', (ord(word_text[0]),)
+                # continue with the next word in the line
+                word = word.getNext()
+                continue
+
+            words.append(word_text)
 
             # gets bounding boxes for all characters and font info
             for i in range(word_length):
+                # print "text: '%s'" % (word_text,), '1st char:', ord(word_text[0]), 'pos:', i, 'len text:', word_length, 'len:', len(word_text)
+
                 word.getCharBBox(i, &bx1, &by1, &bx2, &by2)
 
                 last_bbox = BBox(bx1, by1, bx2, by2)
@@ -603,10 +620,6 @@ cdef class Line:
                                      Color(r, g, b))
 
                 self._fonts.append(last_font)
-
-            s = word.getText()
-            words.append(s.getCString().decode('UTF-8'))
-            del s
 
             # the number of bboxes/fonts must equal the number of characters in the word
             assert len(words[-1]) == word_length
@@ -638,7 +651,7 @@ cdef class Line:
         self._text= u''.join(words)
 
         # the number of bboxes/fonts must equal the number of characters in the word
-        assert len(self._bboxes) == len(self._text)
+        assert len(self._bboxes) == len(self._text), 'number of bounding boxes do not match number of charecters: %d != %d' % (len(self._bboxes), len(self._text))
 
     property bbox:
         '''
