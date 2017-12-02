@@ -1,3 +1,8 @@
+# cython: boundscheck=False
+# cython: wraparound=True
+# cython: cdivision=True
+# coding: utf-8
+#
 # This file is part of pdfparser.
 #
 # pdfparse is free software: you can redistribute it and/or modify
@@ -571,6 +576,7 @@ cdef class Line:
         cdef:
             TextWord *word
             GooString *_word_text
+            GooString *_font_name
             double bx1, bx2, by1, by2
             list words = []
             int i, word_length
@@ -584,25 +590,8 @@ cdef class Line:
             word_length = word.getLength()
             assert word_length > 0, 'a word must contain at least one character'
 
-            _word_text = word.getText()
-            word_text = _word_text.getCString().decode('UTF-8')
-            del _word_text
-
-            # TT: Some characters (typically accented) break poppler in certain PDF - they show up as single
-            #     letter words containing 'nothing'. Any method that provides information about the words
-            #     characters results in SEGV!!!
-            if len(word_text) == 1 and ord(word_text[0]) in (0, 1, 2, 3, 4, 5, 6):
-                # print 'BAD CHARACTER CODE:', (ord(word_text[0]),)
-                # continue with the next word in the line
-                word = word.getNext()
-                continue
-
-            words.append(word_text)
-
             # gets bounding boxes for all characters and font info
             for i in range(word_length):
-                # print "text: '%s'" % (word_text,), '1st char:', ord(word_text[0]), 'pos:', i, 'len text:', word_length, 'len:', len(word_text)
-
                 word.getCharBBox(i, &bx1, &by1, &bx2, &by2)
 
                 last_bbox = BBox(bx1, by1, bx2, by2)
@@ -615,11 +604,24 @@ cdef class Line:
 
                 word.getColor(&r, &g, &b)
 
-                last_font = FontInfo(word.getFontName(i).getCString().decode('UTF-8'),
+                _font_name = word.getFontName(i)
+
+                # If the current character comes out of NOT
+                # embedded font `_font_name` is NULL.
+                if _font_name != NULL:
+                    font_name = _font_name.getCString().decode('UTF-8')
+                else:
+                    font_name = u'?'
+
+                last_font = FontInfo(font_name,
                                      word.getFontSize(),
                                      Color(r, g, b))
 
                 self._fonts.append(last_font)
+
+            _word_text = word.getText()
+            words.append(_word_text.getCString().decode('UTF-8'))
+            del _word_text
 
             # the number of bboxes/fonts must equal the number of characters in the word
             assert len(words[-1]) == word_length
