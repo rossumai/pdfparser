@@ -32,6 +32,8 @@ sudo apt-get install -y libcairo2 libcairo2-dev
 git clone --depth 1 --branch poppler-0.61.1 https://anongit.freedesktop.org/git/poppler/poppler.git
 git clone --depth 1 --branch v1.15.4 https://github.com/pygobject/pycairo.git
 
+patch poppler/poppler/CairoOutputDev.cc CairoOutputDev.cc.patch
+
 cd poppler
 cmake -DCMAKE_BUILD_TYPE=release -DENABLE_CPP=OFF -DENABLE_GLIB=ON -DENABLE_QT4=OFF -DENABLE_QT5=OFF  -DBUILD_GTK_TESTS=OFF -DENABLE_SPLASH=OFF -DENABLE_UTILS=OFF
 make
