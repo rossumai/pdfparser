@@ -184,6 +184,7 @@ cdef extern from "CairoOutputDev.h":
     cdef cppclass CairoOutputDev:
         CairoOutputDev()
         void setCairo(cairo_t *cr)
+        void setPrinting(GBool printing)
         void startDoc(PDFDoc *docA, CairoFontEngine *parentFontEngine)
 
 
@@ -326,6 +327,7 @@ cdef class PopplerDocument:
 
         # See poppler/glib/poppler-page.cc:341-343 - setting of CairoOutputDev before a page is rendered
         device.setCairo(cairo)
+        device.setPrinting(printing)
         cairo_save(cairo)
         self.render_page_into_device(<OutputDev *> device, page_number, hDPI, vDPI, printing,
                                      crop is not None, sliceX, sliceY, sliceW, sliceH)
