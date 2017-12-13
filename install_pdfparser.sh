@@ -19,7 +19,7 @@
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
 sudo apt-get update
-sudo apt-get install -y libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
+sudo apt-get install -y cmake libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
 
 sudo apt install ttf-mscorefonts-installer
 wget https://sourceforge.net/projects/corefonts/files/OldFiles/IELPKTH.CAB
