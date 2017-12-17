@@ -81,12 +81,13 @@ cdef extern from "PDFDoc.h":
                               void *annotDisplayDecideCbkData = NULL, GBool copyXRef = False)
         double getPageMediaWidth(int page)
         double getPageMediaHeight(int page)
-        Page *getPage(int page);
+        int getPageRotate(int page)
+        Page *getPage(int page)
 
 
 cdef extern from "Page.h":
     cdef cppclass PDFRectangle:
-        double x1, y1, x2, y2;
+        double x1, y1, x2, y2
 
     cdef cppclass Page:
         Gfx *createGfx(OutputDev *out, double hDPI, double vDPI,
@@ -114,7 +115,7 @@ cdef extern from "TextOutputDev.h":
         void incRefCnt()
         void decRefCnt()
         TextFlow *getFlows()
-        GooString *getText(double xMin, double yMin, double xMax, double yMax);
+        GooString *getText(double xMin, double yMin, double xMax, double yMax)
 
     cdef cppclass TextFlow:
         TextFlow *getNext()
@@ -143,8 +144,8 @@ cdef extern from "TextOutputDev.h":
 
     cdef cppclass TextFontInfo:
         GooString *getFontName() 
-        double getAscent();
-        double getDescent();
+        double getAscent()
+        double getDescent()
 
         GBool isFixedWidth() 
         GBool isSerif() 
@@ -164,7 +165,7 @@ cdef extern from "cairo.h":
 
 cdef extern from "pycairo.h":
     ctypedef struct PycairoContext:
-        cairo_t *ctx;
+        cairo_t *ctx
 
 
 cdef extern from "CairoFontEngine.h":
@@ -225,6 +226,9 @@ cdef class PopplerDocument:
         cdef double height = self.document.getPageMediaHeight(page_number + 1)
         return (width, height)
 
+    cdef int get_page_rotation(self, page_number):
+        return self.document.getPageRotate(page_number + 1)
+
     def get_images_bboxes(self, page_number):
         cdef CairoImageOutputDev *image_device = new CairoImageOutputDev()
         cdef Page *page = self.document.getPage(page_number + 1)
@@ -240,12 +244,12 @@ cdef class PopplerDocument:
 
         for i in range(image_device.getNumImages()):
             image = image_device.getImage(i)
-            image.getRect(&x1, &y1, &x2, &y2);
+            image.getRect(&x1, &y1, &x2, &y2)
 
-            x1 -= page.getCropBox().x1;
-            y1 -= page.getCropBox().y1;
-            x2 -= page.getCropBox().x1;
-            y2 -= page.getCropBox().y1;
+            x1 -= page.getCropBox().x1
+            y1 -= page.getCropBox().y1
+            x2 -= page.getCropBox().x1
+            y2 -= page.getCropBox().y1
 
             images_bboxes.append(BBox(x1, y1, x2, y2))
 
@@ -361,7 +365,7 @@ cdef class PopplerPage:
     def __cinit__(self, PopplerDocument document, int page_number):
         cdef TextOutputDev * device
 
-        device = new TextOutputDev(NULL, document.keep_physical_layout, document.fixed_pitch, False, False);
+        device = new TextOutputDev(NULL, document.keep_physical_layout, document.fixed_pitch, False, False)
         document.render_page_into_device(<OutputDev *> device, page_number)
         self.page = device.takeText()
         del device
@@ -418,6 +422,13 @@ cdef class PopplerPage:
         '''
         def __get__(self):
             return self.document.get_page_size(self.page_number)
+
+    property rotation:
+        '''
+        The rotation of the page as 0, 90, 180, 270 degrees.
+        '''
+        def __get__(self):
+            return self.document.get_page_rotation(self.page_number)
 
     cdef TextFlow *getFlows(self):
         return self.page.getFlows()
