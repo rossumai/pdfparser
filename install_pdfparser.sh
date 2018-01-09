@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This file is part of pdfparser.
 #
@@ -18,6 +18,9 @@
 # Original version by Ivan Zderadicka  (https://github.com/izderadicka/pdfparser)
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
+# install without sudo while inside virtualenv
+need_sudo=`python -c 'import sys; print not hasattr(sys, "real_prefix")'`
+
 sudo apt-get update
 sudo apt-get install -y cmake libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
 
@@ -28,7 +31,9 @@ sudo cp tahoma* /usr/share/fonts/truetype/msttcorefonts/
 sudo chmod 644 /usr/share/fonts/truetype/msttcorefonts/tahoma*
 sudo fc-cache -v
 
-pip install -r requirements.txt
+rm -rf 'tahoma*ttf'
+
+if [[ ${need_sudo} == 'True' ]]; then sudo pip install -r requirements.txt; else pip install -r requirements.txt; fi
 
 # This would be ideal way to install pdfparser but some cairo-specific headers
 # are just not included in any of poppler related packages
@@ -47,14 +52,24 @@ cp libpoppler.so.?? ../pdfparser/
 cp glib/libpoppler-glib.so.? ../pdfparser/
 
 cd ../pycairo
-python setup.py install
+if [[ ${need_sudo} == 'True' ]]; then sudo python setup.py install; else python setup.py install; fi
 cd ..
 
-POPPLER_CAIRO_ROOT='.' python setup.py install
+if [[ ${need_sudo} == 'True' ]]
+then
+    sudo POPPLER_CAIRO_ROOT='.' python setup.py install
+    # build a source and binary package
+    sudo POPPLER_CAIRO_ROOT='.' python setup.py sdist
+    sudo POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel
+    sudo rm -rf build dist pdfparser.egg-info
+else
+    POPPLER_CAIRO_ROOT='.' python setup.py install
+    # build a source and binary package
+    POPPLER_CAIRO_ROOT='.' python setup.py sdist
+    POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel
+    rm -rf build dist pdfparser.egg-info
+fi
 
-# build a source and binary package
-POPPLER_CAIRO_ROOT='.' python setup.py sdist
-POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel
 # can be installed with: pip install dist/*.whl
 # publishing:
 # $ pip install twine
@@ -65,4 +80,9 @@ POPPLER_CAIRO_ROOT='.' python setup.py bdist_wheel
 ### production PyPI;
 # twine upload twine upload dist/*
 
-rm -rf poppler pycairo
+if [[ ${need_sudo} == 'True' ]]
+then
+    sudo rm -rf poppler pycairo
+else
+    rm -rf poppler pycairo
+fi
