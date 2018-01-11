@@ -622,7 +622,10 @@ cdef class Line:
                 # If the current character comes out of NOT
                 # embedded font `_font_name` is NULL.
                 if _font_name != NULL:
-                    font_name = _font_name.getCString().decode('UTF-8')
+                    try:
+                        font_name = _font_name.getCString().decode('UTF-8')
+                    except:
+                        font_name = u'%r' % _font_name.getCString()
                 else:
                     font_name = u'?'
 
