@@ -92,8 +92,8 @@ if POPPLER_CAIRO_ROOT:
 
     package_data = {'pdfparser': ['*.so.*']}
     poppler_cairo_config = {'extra_compile_args': ["-std=c++11"],
-                            'include_dirs': map(append_root, ['poppler', 'poppler/poppler', 'pycairo/cairo/']),
-                            'library_dirs': map(append_root, ['poppler', 'poppler/glib']),
+                            'include_dirs': list(map(append_root, ['poppler', 'poppler/poppler', 'pycairo/cairo/'])),
+                            'library_dirs': list(map(append_root, ['poppler', 'poppler/glib'])),
                             'libraries': ['poppler', 'poppler-glib'],
                             'runtime_library_dirs': ['$ORIGIN']}
 
