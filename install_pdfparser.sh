@@ -19,7 +19,7 @@
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
 # install without sudo while inside virtualenv
-need_sudo=`python -c 'import sys; print(not hasattr(sys, "real_prefix"))'`
+need_sudo=`python -c 'import sys; print(not hasattr(sys, "real_prefix") and (not hasattr(sys, "base_prefix") or sys.prefix == sys.base_prefix))'`
 
 sudo apt-get update
 sudo apt-get install -y cmake libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
