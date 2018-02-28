@@ -17,21 +17,47 @@
 #
 # Original version by Ivan Zderadicka  (https://github.com/izderadicka/pdfparser)
 # Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
+#
+# A part of this code was inspired by vistafonts-installer
+# (http://plasmasturm.org/code/vistafonts-installer/). vistafonts-installer
+# is a free software distributed under the terms of MIT License.
+# For more information about the license see the attached original
+# vistafonts-installer script.
+
+set -e
 
 # install without sudo while inside virtualenv
 need_sudo=`python -c 'import sys; print(not hasattr(sys, "real_prefix") and (not hasattr(sys, "base_prefix") or sys.prefix == sys.base_prefix))'`
 
 sudo apt-get update
-sudo apt-get install -y cmake libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
+sudo apt-get install -y cmake libtool pkg-config gettext fontconfig libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev cabextract
+
+MS_FONTS_ARCHIVE=IELPKTH.CAB
+MS_FONTS_DIR=/usr/share/fonts/truetype/msttcorefonts/
+
+VISTA_FONTS_ARCHIVE=PowerPointViewer.exe
+VISTA_FONTS_DIR=/usr/share/fonts/truetype/vistafonts/
+
+TMPDIR=`mktemp -d`
+trap 'rm -rf $TMPDIR $MS_FONTS_ARCHIVE $VISTA_FONTS_ARCHIVE' EXIT INT QUIT TERM
 
 sudo apt install ttf-mscorefonts-installer
-wget https://sourceforge.net/projects/corefonts/files/OldFiles/IELPKTH.CAB
-cabextract -F 'tahoma*ttf' IELPKTH.CAB
-sudo cp tahoma* /usr/share/fonts/truetype/msttcorefonts/
-sudo chmod 644 /usr/share/fonts/truetype/msttcorefonts/tahoma*
-sudo fc-cache -v
+wget https://sourceforge.net/projects/corefonts/files/OldFiles/$MS_FONTS_ARCHIVE
+cabextract -L -F 'tahoma*ttf' -d $TMPDIR $MS_FONTS_ARCHIVE
+sudo mv $TMPDIR/tahoma* $MS_FONTS_DIR
+sudo chmod 600 $MS_FONTS_DIR/tahoma*
+sudo fc-cache -fv $MS_FONTS_DIR
 
-rm -rf 'tahoma*ttf'
+wget http://download.microsoft.com/download/f/5/a/f5a3df76-d856-4a61-a6bd-722f52a5be26/$VISTA_FONTS_ARCHIVE
+cabextract -L -F ppviewer.cab -d $TMPDIR $VISTA_FONTS_ARCHIVE
+
+sudo cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR $TMPDIR/ppviewer.cab
+
+( cd $VISTA_FONTS_DIR && sudo mv cambria.ttc cambria.ttf && sudo chmod 600 \
+        calibri{,b,i,z}.ttf cambria{,b,i,z}.ttf candara{,b,i,z}.ttf \
+        consola{,b,i,z}.ttf constan{,b,i,z}.ttf corbel{,b,i,z}.ttf )
+
+fc-cache -fv $VISTA_FONTS_DIR
 
 if [[ ${need_sudo} == 'True' ]]; then sudo pip install -r requirements.txt; else pip install -r requirements.txt; fi
 
