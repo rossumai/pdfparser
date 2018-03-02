@@ -47,6 +47,19 @@ cdef extern from "goo/GooString.h":
         char getChar(int i)
 
 
+cdef extern from "glib-object.h":
+    cdef cppclass Goffset:
+        pass
+
+cdef extern from "Error.h":
+    cdef cppclass ErrorCategory:
+        pass
+    cdef void setErrorCallback(void (*cbk)(void *data, ErrorCategory category,
+                                          Goffset pos, char *msg), void *data);
+
+# unset any error callback --> errors are printed to stderr
+setErrorCallback(NULL, NULL)
+
 cdef extern from "OutputDev.h":
     cdef cppclass OutputDev:
         pass
