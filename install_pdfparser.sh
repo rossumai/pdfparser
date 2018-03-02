@@ -42,22 +42,33 @@ TMPDIR=`mktemp -d`
 trap 'rm -rf $TMPDIR $MS_FONTS_ARCHIVE $VISTA_FONTS_ARCHIVE' EXIT INT QUIT TERM
 
 sudo apt install ttf-mscorefonts-installer
+
 wget https://sourceforge.net/projects/corefonts/files/OldFiles/$MS_FONTS_ARCHIVE
-cabextract -L -F 'tahoma*ttf' -d $TMPDIR $MS_FONTS_ARCHIVE
-sudo mv $TMPDIR/tahoma* $MS_FONTS_DIR
-sudo chmod 600 $MS_FONTS_DIR/tahoma*
-sudo fc-cache -fv $MS_FONTS_DIR
+
+if cabextract -L -F 'tahoma*ttf' -d $TMPDIR $MS_FONTS_ARCHIVE
+then
+    sudo mv $TMPDIR/tahoma* $MS_FONTS_DIR
+    sudo chmod 600 $MS_FONTS_DIR/tahoma*
+    sudo fc-cache -fv $MS_FONTS_DIR
+else
+    echo "ERROR: Failed to install Tahoma font!"
+    exit 1
+fi
 
 wget http://download.microsoft.com/download/f/5/a/f5a3df76-d856-4a61-a6bd-722f52a5be26/$VISTA_FONTS_ARCHIVE
-cabextract -L -F ppviewer.cab -d $TMPDIR $VISTA_FONTS_ARCHIVE
 
-sudo cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR $TMPDIR/ppviewer.cab
+if cabextract -L -F ppviewer.cab -d $TMPDIR $VISTA_FONTS_ARCHIVE
+then
+    sudo cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR $TMPDIR/ppviewer.cab
 
-( cd $VISTA_FONTS_DIR && sudo mv cambria.ttc cambria.ttf && sudo chmod 600 \
-        calibri{,b,i,z}.ttf cambria{,b,i,z}.ttf candara{,b,i,z}.ttf \
-        consola{,b,i,z}.ttf constan{,b,i,z}.ttf corbel{,b,i,z}.ttf )
-
-fc-cache -fv $VISTA_FONTS_DIR
+    ( cd $VISTA_FONTS_DIR && sudo mv cambria.ttc cambria.ttf && sudo chmod 600 \
+            calibri{,b,i,z}.ttf cambria{,b,i,z}.ttf candara{,b,i,z}.ttf \
+            consola{,b,i,z}.ttf constan{,b,i,z}.ttf corbel{,b,i,z}.ttf )
+    sudo fc-cache -fv $VISTA_FONTS_DIR
+else
+    echo "ERROR: Failed to install Vista fonts!"
+    exit 1
+fi
 
 if [[ ${need_sudo} == 'True' ]]; then sudo pip install -r requirements.txt; else pip install -r requirements.txt; fi
 
