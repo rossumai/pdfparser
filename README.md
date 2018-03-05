@@ -24,11 +24,9 @@ Available under GPL v3 or any later version license (libpoppler is also GPL).
 Below or some instructions to install this package
 
 ```
-git clone --depth 1 https://github.com/izderadicka/pdfparser.git
+git clone --depth 1 https://github.com/rossumai/pdfparser.git
 cd pdfparser
-./build_poppler.sh
-pip install cython
-POPPLER_ROOT=poppler_src ./setup.py install
+./install_pdfparser.sh
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
 ```
