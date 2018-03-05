@@ -23,43 +23,6 @@ Available under GPL v3 or any later version license (libpoppler is also GPL).
 
 Below or some instructions to install this package
 
-### CentOS 7 - system-wide libpoppler (pkg-config method)
-
-Install the poppler-devel package (Tested with version 0.26.5-16.el7)
-
-    yum install poppler-devel
-
-Install cython
-    
-    pip install cython
-
-Install the repo
-    
-    pip install git+https://github.com/izderadicka/pdfparser
-
-### CentOS 7 - self compiled method
-
-Clone this repo and enter into the root folder
-
-    cd /git/repos/
-    git clone https://github.com/izderadicka/pdfparser.git
-    cd pdfparser
-
-Clone the poppler repo and install (similar to build_poppler.sh)
-    
-    yum install openjpeg2-devel libjpeg-turbo-devel
-    git clone --depth 1 git://git.freedesktop.org/git/poppler/poppler poppler_src
-    cd poppler_src
-    ./autogen.sh
-    ./configure --disable-poppler-qt4 --disable-poppler-qt5 --disable-poppler-cpp --disable-gtk-test --disable-splash-output --disable-utils
-    make
-    cp poppler/.libs/libpoppler.so.?? ../pdfparser/
-    cd ..
-    POPPLER_ROOT=poppler_src python setup.py install
-    
- 
-### Debian like - self compiled method
- 
 ```
 git clone --depth 1 https://github.com/izderadicka/pdfparser.git
 cd pdfparser
@@ -68,14 +31,6 @@ pip install cython
 POPPLER_ROOT=poppler_src ./setup.py install
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
-```
-
-### Debian like -  system wide libpoppler 
-```
-sudo apt-get update
-sudo apt-get install -y libpoppler-private-dev
-pip install cython
-pip install git+https://github.com/izderadicka/pdfparser
 ```
     
 
