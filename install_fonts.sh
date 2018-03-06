@@ -23,7 +23,7 @@
 
 set -e
 
-apt-get install -y cabextract fontconfig
+apt-get install -y cabextract coreutils debconf fontconfig wget
 
 MS_FONTS_ARCHIVE=IELPKTH.CAB
 MS_FONTS_DIR=/usr/share/fonts/truetype/msttcorefonts/
