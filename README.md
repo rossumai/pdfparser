@@ -26,7 +26,7 @@ Below or some instructions to install this package
 ```
 git clone --depth 1 https://github.com/rossumai/pdfparser.git
 cd pdfparser
-./install_fonts.sh
+sudo ./install_fonts.sh
 ./install_pdfparser.sh
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
