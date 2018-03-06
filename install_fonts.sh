@@ -35,7 +35,8 @@ TMPDIR=`mktemp -d`
 trap 'rm -rf $TMPDIR' EXIT INT QUIT TERM
 cd "$TMPDIR"
 
-apt install ttf-mscorefonts-installer
+echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+apt-get install -y ttf-mscorefonts-installer
 
 wget https://sourceforge.net/projects/corefonts/files/OldFiles/$MS_FONTS_ARCHIVE
 
