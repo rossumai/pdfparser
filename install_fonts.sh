@@ -32,15 +32,15 @@ VISTA_FONTS_ARCHIVE=PowerPointViewer.exe
 VISTA_FONTS_DIR=/usr/share/fonts/truetype/vistafonts/
 
 TMPDIR=`mktemp -d`
-trap 'rm -rf $TMPDIR $MS_FONTS_ARCHIVE $VISTA_FONTS_ARCHIVE' EXIT INT QUIT TERM
+trap 'rm -rf $TMPDIR' EXIT INT QUIT TERM
+cd "$TMPDIR"
 
 apt install ttf-mscorefonts-installer
 
 wget https://sourceforge.net/projects/corefonts/files/OldFiles/$MS_FONTS_ARCHIVE
 
-if cabextract -L -F 'tahoma*ttf' -d $TMPDIR $MS_FONTS_ARCHIVE
+if cabextract -L -F 'tahoma*ttf' -d $MS_FONTS_DIR  $MS_FONTS_ARCHIVE
 then
-    mv $TMPDIR/tahoma* $MS_FONTS_DIR
     chmod 600 $MS_FONTS_DIR/tahoma*
     fc-cache -fv $MS_FONTS_DIR
 else
@@ -50,9 +50,9 @@ fi
 
 wget http://download.microsoft.com/download/f/5/a/f5a3df76-d856-4a61-a6bd-722f52a5be26/$VISTA_FONTS_ARCHIVE
 
-if cabextract -L -F ppviewer.cab -d $TMPDIR $VISTA_FONTS_ARCHIVE
+if cabextract -L -F ppviewer.cab $VISTA_FONTS_ARCHIVE
 then
-    cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR $TMPDIR/ppviewer.cab
+    cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR ppviewer.cab
 
     ( cd $VISTA_FONTS_DIR && mv cambria.ttc cambria.ttf && chmod 600 \
             calibri{,b,i,z}.ttf cambria{,b,i,z}.ttf candara{,b,i,z}.ttf \
