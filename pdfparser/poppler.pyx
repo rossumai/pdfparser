@@ -58,7 +58,7 @@ cdef extern from "Error.h":
                                           Goffset pos, char *msg), void *data);
 
 # unset any error callback --> errors are printed to stderr
-setErrorCallback(NULL, NULL)
+# setErrorCallback(NULL, NULL)
 
 cdef extern from "OutputDev.h":
     cdef cppclass OutputDev:
