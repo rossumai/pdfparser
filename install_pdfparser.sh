@@ -14,17 +14,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pdfparser.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Original version by Ivan Zderadicka  (https://github.com/izderadicka/pdfparser)
-# Adopted and modified by Rossum (https://github.com/rossumai/pdfparser)
 
 set -e
 
 # install without sudo while inside virtualenv
 need_sudo=`python -c 'import sys; print(not hasattr(sys, "real_prefix") and (not hasattr(sys, "base_prefix") or sys.prefix == sys.base_prefix))'`
 
-sudo apt-get update
-sudo apt-get install -y cmake libtool pkg-config gettext libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev
+sudo apt-get install -y pkg-config libfontconfig1 libzip4 libtiff5 libopenjpeg5
 
 if [[ ${need_sudo} == 'True' ]]; then sudo pip install -r requirements.txt; else pip install -r requirements.txt; fi
 
@@ -34,17 +30,12 @@ if [[ ${need_sudo} == 'True' ]]; then sudo pip install -r requirements.txt; else
 # python setup.py install
 
 sudo apt-get install -y libcairo2 libcairo2-dev
-git clone --depth 1 --branch poppler-0.61.1 https://anongit.freedesktop.org/git/poppler/poppler.git
 git clone --depth 1 --branch v1.15.4 https://github.com/pygobject/pycairo.git
 
-cd poppler
-cmake -DCMAKE_BUILD_TYPE=release -DENABLE_CPP=OFF -DENABLE_GLIB=ON -DENABLE_QT4=OFF -DENABLE_QT5=OFF  -DBUILD_GTK_TESTS=OFF -DENABLE_SPLASH=OFF -DENABLE_UTILS=OFF
-make
+cp poppler/libpoppler.so.?? pdfparser/
+cp poppler/glib/libpoppler-glib.so.? pdfparser/
 
-cp libpoppler.so.?? ../pdfparser/
-cp glib/libpoppler-glib.so.? ../pdfparser/
-
-cd ../pycairo
+cd pycairo
 if [[ ${need_sudo} == 'True' ]]; then sudo python setup.py install; else python setup.py install; fi
 cd ..
 
