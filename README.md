@@ -27,7 +27,7 @@ Below or some instructions to install this package
 git clone --depth 1 https://github.com/rossumai/pdfparser.git
 cd pdfparser
 sudo ./install_fonts.sh
-./build_poppler.sh
+sudo ./build_poppler.sh
 ./install_pdfparser.sh
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
