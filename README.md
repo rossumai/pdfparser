@@ -28,6 +28,8 @@ git clone --depth 1 https://github.com/rossumai/pdfparser.git
 cd pdfparser
 sudo ./install_fonts.sh
 sudo ./build_poppler.sh
+sudo apt-get install -y libcairo2 libcairo2-dev libfontconfig1 libopenjpeg5 libtiff5 libzip4 pkg-config
+# If not in virtualenv, run install_pdfparser.sh with sudo
 ./install_pdfparser.sh
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
