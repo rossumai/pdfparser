@@ -42,7 +42,7 @@ wget https://sourceforge.net/projects/corefonts/files/OldFiles/$MS_FONTS_ARCHIVE
 
 if cabextract -L -F 'tahoma*ttf' -d $MS_FONTS_DIR  $MS_FONTS_ARCHIVE
 then
-    chmod 600 $MS_FONTS_DIR/tahoma*
+    chmod 644 $MS_FONTS_DIR/tahoma*
     fc-cache -fv $MS_FONTS_DIR
 else
     echo "ERROR: Failed to install Tahoma font!"
@@ -55,7 +55,7 @@ if cabextract -L -F ppviewer.cab $VISTA_FONTS_ARCHIVE
 then
     cabextract -L -F '*.TT[FC]' -d $VISTA_FONTS_DIR ppviewer.cab
 
-    ( cd $VISTA_FONTS_DIR && mv cambria.ttc cambria.ttf && chmod 600 \
+    ( cd $VISTA_FONTS_DIR && mv cambria.ttc cambria.ttf && chmod 644 \
             calibri{,b,i,z}.ttf cambria{,b,i,z}.ttf candara{,b,i,z}.ttf \
             consola{,b,i,z}.ttf constan{,b,i,z}.ttf corbel{,b,i,z}.ttf )
     fc-cache -fv $VISTA_FONTS_DIR
