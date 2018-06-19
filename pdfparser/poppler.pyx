@@ -25,9 +25,15 @@ from libcpp cimport bool
 from cpython cimport bool as PyBool
 from cpython.object cimport Py_EQ, Py_NE
 
+
 ctypedef bool GBool
 
 DEF PRECISION=1e-6
+
+
+cdef extern from "float.h" nogil:
+    double DBL_MIN
+    double DBL_MAX
 
 
 cdef extern from "GlobalParams.h":
@@ -51,14 +57,13 @@ cdef extern from "glib-object.h":
     cdef cppclass Goffset:
         pass
 
+
 cdef extern from "Error.h":
     cdef cppclass ErrorCategory:
         pass
     cdef void setErrorCallback(void (*cbk)(void *data, ErrorCategory category,
                                           Goffset pos, char *msg), void *data);
 
-# unset any error callback --> errors are printed to stderr
-# setErrorCallback(NULL, NULL)
 
 cdef extern from "OutputDev.h":
     cdef cppclass OutputDev:
@@ -110,6 +115,7 @@ cdef extern from "Page.h":
                        void *abortCheckCbkData, XRef *xrefA = NULL)
         void display(Gfx *gfx)
         PDFRectangle *getCropBox()
+
 
 cdef extern from "PDFDocFactory.h":
     cdef cppclass PDFDocFactory:
@@ -356,7 +362,7 @@ cdef class PopplerDocument:
 cdef class DocumentPageIterator:
     cdef:
         PopplerDocument document
-        int page_number
+        int             page_number
 
     def __cinit__(self, PopplerDocument document):
         self.document = document
@@ -371,9 +377,9 @@ cdef class DocumentPageIterator:
 
 cdef class PopplerPage:
     cdef:
-        PopplerDocument document
-        int page_number
-        TextPage *page
+        PopplerDocument  document
+        int              page_number
+        TextPage        *page
 
     def __cinit__(self, PopplerDocument document, int page_number):
         cdef TextOutputDev * device
@@ -463,8 +469,8 @@ cdef class PopplerPage:
 
 
 cdef class FlowsIterator:
-    cdef PopplerPage page
-    cdef TextFlow *flows
+    cdef PopplerPage  page
+    cdef TextFlow    *flows
 
     def __cinit__(self, PopplerPage page):
         self.page = page
@@ -482,8 +488,8 @@ cdef class FlowsIterator:
 
 
 cdef class Flow:
-    cdef PopplerPage page
-    cdef TextFlow *flow
+    cdef PopplerPage  page
+    cdef TextFlow    *flow
 
     def __cinit__(self, PopplerPage page):
         self.page = page
@@ -504,8 +510,8 @@ cdef class Flow:
 
 
 cdef class BlocksIterator:
-    cdef PopplerPage page
-    cdef TextBlock *blocks
+    cdef PopplerPage  page
+    cdef TextBlock   *blocks
 
     def __cinit__(self, PopplerPage page, Flow flow):
         self.page = page
@@ -523,8 +529,8 @@ cdef class BlocksIterator:
 
 
 cdef class Block:
-    cdef PopplerPage page
-    cdef TextBlock *block
+    cdef PopplerPage  page
+    cdef TextBlock   *block
 
     def __cinit__(self, PopplerPage page):
         self.page = page
@@ -544,14 +550,10 @@ cdef class Block:
         return LinesIterator(self.page, self)
 
     property bbox:
-        '''
-        The bounding box of this block of text
-        as (left, top, right, bottom).
-        '''
         def __get__(self):
             cdef double x1, y1, x2, y2
             self.block.getBBox(&x1, &y1, &x2, &y2)
-            return BBox(x1,y1,x2,y2)
+            return BBox(x1, y1, x2, y2)
 
 
 cdef class LinesIterator:
@@ -575,140 +577,231 @@ cdef class LinesIterator:
 
 cdef class Line:
     cdef:
-        PopplerPage page
-        TextLine *line
-        double x1, y1, x2, y2
-        unicode _text
-        list _bboxes
-        CompactList _fonts
+        PopplerPage  page
+        TextLine    *line
+        unicode      text
+        BBox         bbox
+        list         char_bboxes
+        CompactList  char_fonts
 
     def __cinit__(self, PopplerPage page):
         self.page = page
         self.line = NULL
+        self.text = None
 
     cdef Line wrap(self, TextLine *line):
         self.line = line
-        self._text = u'' # text bytes
-        self.x1 = 0
-        self.y1 = 0
-        self.x2 = 0
-        self.y2 = 0
-        self._bboxes = []
-        self._fonts = CompactList()
-        self._get_text()
         return self
 
-    def _get_text(self):
+    cdef TextWord *getWords(self):
+        if self.line:
+            return self.line.getWords()
+        else:
+            return NULL
+
+    def __iter__(self):
+        return WordsIterator(self.page, self)
+
+    cdef _cache_line_data(self):
         cdef:
-            TextWord *word
-            GooString *_word_text
-            GooString *_font_name
-            double bx1, bx2, by1, by2
-            list words = []
-            int i, word_length
-            BBox last_bbox
-            FontInfo last_font
-            double r, g, b
+            Word        word
+            list        bboxes
+            list        word_texts = []
+            list        char_bboxes = []
+            CompactList char_fonts = CompactList()
+            double      l = DBL_MAX
+            double      t = DBL_MAX
+            double      r = DBL_MIN
+            double      b = DBL_MIN
+            BBox        prev_char_box
+            BBox        curr_char_box
+            bool        has_space_before = False
 
-        word = self.line.getWords()
+        for word in self:
+            # skip empty words (if any)
+            if len(word.text) == 0:
+                continue
 
-        while word:
-            word_length = word.getLength()
-            assert word_length > 0, 'a word must contain at least one character'
+            bboxes = word.char_bboxes
 
-            # gets bounding boxes for all characters and font info
-            for i in range(word_length):
-                word.getCharBBox(i, &bx1, &by1, &bx2, &by2)
+            # the bouding box of the first
+            # character in the current word.
+            curr_char_box = bboxes[0]
 
-                last_bbox = BBox(bx1, by1, bx2, by2)
+            # if the previous word ended with space,
+            # it needs to be added because it is not
+            # a part of the word
+            if has_space_before:
+                word_texts.append(u' ')
+                # bounding box of the space is put between
+                # the previous and current word
+                char_bboxes.append(BBox(prev_char_box.x2,
+                                        prev_char_box.y1,
+                                        curr_char_box.x1,
+                                        prev_char_box.y2))
+                char_fonts.append(char_fonts[-1])
 
-                # if previous word is space update it's right end
-                if i == 0 and words and words[-1] == u' ':
-                    self._bboxes[-1].x2 = last_bbox.x1
+            # the bounding box of the last
+            # character in the current word
+            prev_char_box = bboxes[-1]
 
-                self._bboxes.append(last_bbox)
+            # append the next word, its character
+            # bounding boxes and font information
+            word_texts.append(word.text)
+            char_bboxes.extend(bboxes)
+            char_fonts.extend(word.char_fonts)
 
-                word.getColor(&r, &g, &b)
+            has_space_before = word.has_space_after
 
-                _font_name = word.getFontName(i)
+        self.text = u''.join(word_texts)
+        self.char_bboxes = char_bboxes
+        self.char_fonts = char_fonts
 
-                # If the current character comes out of NOT
-                # embedded font `_font_name` is NULL.
-                if _font_name != NULL:
-                    try:
-                        font_name = _font_name.getCString().decode('UTF-8')
-                    except:
-                        font_name = u'%r' % _font_name.getCString()
-                else:
-                    font_name = u'?'
+        for bbox in char_bboxes:
+            l = min(bbox[0], l)
+            t = min(bbox[1], t)
+            r = max(bbox[2], r)
+            b = max(bbox[3], b)
 
-                last_font = FontInfo(font_name,
-                                     word.getFontSize(),
-                                     Color(r, g, b))
+        self.bbox = BBox(l, t, r, b)
 
-                self._fonts.append(last_font)
-
-            _word_text = word.getText()
-            words.append(_word_text.getCString().decode('UTF-8'))
-            del _word_text
-
-            # the number of bboxes/fonts must equal the number of characters in the word
-            assert len(words[-1]) == word_length
-
-            # update the line bounding box
-            word.getBBox(&bx1, &by1, &bx2, &by2)
-
-            if bx1 < self.x1 or self.x1 == 0:
-                self.x1 = bx1
-
-            if by1 < self.y1 or self.y1 == 0:
-                self.y1 = by1
-
-            if bx2 > self.x2:
-                self.x2 = bx2
-
-            if by2 > self.y2:
-                self.y2 = by2
-
-            # add space after word if necessary
-            if word.hasSpaceAfter():
-                words.append(u' ')
-                self._bboxes.append(BBox(last_bbox.x2, last_bbox.y1, last_bbox.x2, last_bbox.y2))
-                self._fonts.append(last_font)
-
-            # continue with the next word in the line
-            word = word.getNext()
-
-        self._text= u''.join(words)
-
-        # the number of bboxes/fonts must equal the number of characters in the word
-        assert len(self._bboxes) == len(self._text), 'number of bounding boxes do not match number of charecters: %d != %d' % (len(self._bboxes), len(self._text))
+        # sanity check for data integrity
+        assert len(self.text) == len(self.char_bboxes)
+        assert len(self.text) == len(self.char_fonts)
 
     property bbox:
-        '''
-        The bounding box of this line of text
-        as (left, top, right, bottom).
-        '''
         def __get__(self):
-            return BBox(self.x1, self.y1, self.x2, self.y2)
+            if self.bbox is None:
+                self._cache_line_data()
+            return self.bbox
 
     property text:
         def __get__(self):
-            return self._text
+            if self.text is None:
+                self._cache_line_data()
+            return self.text
 
     property char_bboxes:
         def __get__(self):
-            return self._bboxes
+            if self.char_bboxes is None:
+                self._cache_line_data()
+            return self.char_bboxes
 
     property char_fonts:
         def __get__(self):
-            return self._fonts
+            if self.char_fonts is None:
+                self._cache_line_data()
+            return self.char_fonts
+
+
+cdef class WordsIterator:
+    cdef PopplerPage page
+    cdef TextWord *words
+
+    def __cinit__(self, PopplerPage page, Line line):
+        self.page = page
+        self.words = line.getWords()
+
+    def __next__(self):
+        cdef Word word
+
+        if not self.words:
+            raise StopIteration()
+
+        word = Word(self.page).wrap(self.words)
+        self.words = self.words.getNext()
+        return word
+
+
+cdef class Word:
+    cdef:
+        PopplerPage  page
+        TextWord    *word
+        unicode      text
+        BBox         bbox
+        list         char_bboxes
+        CompactList  char_fonts
+        bool         has_space_after
+
+    def __cinit__(self, PopplerPage page):
+        self.page = page
+        self.word = NULL
+
+    cdef Word wrap(self, TextWord *word):
+        cdef:
+            GooString *_text
+            GooString *_font_name
+            int        i, word_length
+            double     l, t, r, b
+            double     cr, cg, cb
+
+        self.char_bboxes = []
+        self.char_fonts = CompactList()
+
+        word_length = word.getLength()
+
+        # gets bounding boxes for all characters and font info
+        for i in range(word_length):
+            word.getCharBBox(i, &l, &t, &r, &b)
+            self.char_bboxes.append(BBox(l, t, r, b))
+
+            _font_name = word.getFontName(i)
+
+            # non-embedded fonts have `_font_name` set to NULL.
+            if _font_name != NULL:
+                try:
+                    font_name = _font_name.getCString().decode('UTF-8')
+                except:
+                    font_name = u'%r' % _font_name.getCString()
+            else:
+                font_name = u'?'
+
+            word.getColor(&cr, &cg, &cb)
+            self.char_fonts.append(FontInfo(font_name,
+                                            word.getFontSize(),
+                                            Color(cr, cg, cb)))
+
+        # store the word's content
+        _text = word.getText()
+        self.text = _text.getCString().decode('UTF-8')
+        del _text
+
+        # store store the word's bounding box
+        word.getBBox(&l, &t, &r, &b)
+        self.bbox = BBox(l, t, r, b)
+
+        # store `has space after` flag
+        self.has_space_after = word.hasSpaceAfter()
+
+        # sanity check for data integrity
+        assert len(self.text) == len(self.char_bboxes)
+        assert len(self.text) == len(self.char_fonts)
+
+        return self
+
+    property bbox:
+        def __get__(self):
+            return self.bbox
+
+    property text:
+        def __get__(self):
+            return self.text
+
+    property char_bboxes:
+        def __get__(self):
+            return self.char_bboxes
+
+    property char_fonts:
+        def __get__(self):
+            return self.char_fonts
 
 
 cdef class BBox:
+    # Definition of the positions of the left, top, right,
+    # bottom edges of a bounding box, respectively.
     cdef double x1, y1, x2, y2
 
-    def __cinit__(self, double x1, double y1, double x2, double y2 ):
+    def __cinit__(self, double x1, double y1, double x2, double y2):
         self.x1 = x1
         self.x2 = x2
         self.y1 = y1
@@ -877,6 +970,10 @@ cdef class CompactList:
         else:
             self.items.append(item)
             self.index.append(last + 1)
+
+    def extend(self, other):
+        for x in other:
+            self.append(x)
 
     def __getitem__(self, i):
         return self.items[self.index[i]]
