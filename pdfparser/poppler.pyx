@@ -604,17 +604,18 @@ cdef class Line:
 
     cdef _cache_line_data(self):
         cdef:
-            Word word
-            list bboxes
-            list word_texts = []
-            list char_bboxes = []
+            Word        word
+            list        bboxes
+            list        word_texts = []
+            list        char_bboxes = []
             CompactList char_fonts = CompactList()
-            double l = DBL_MAX
-            double t = DBL_MAX
-            double r = DBL_MIN
-            double b = DBL_MIN
-
-        add_word_space = False
+            double      l = DBL_MAX
+            double      t = DBL_MAX
+            double      r = DBL_MIN
+            double      b = DBL_MIN
+            BBox        prev_char_box
+            BBox        curr_char_box
+            bool        has_space_before = False
 
         for word in self:
             # skip empty words (if any)
@@ -623,16 +624,26 @@ cdef class Line:
 
             bboxes = word.char_bboxes
 
+            # the bouding box of the first
+            # character in the current word.
+            curr_char_box = bboxes[0]
+
             # if the previous word ended with space,
             # it needs to be added because it is not
             # a part of the word
-            if add_word_space:
+            if has_space_before:
                 word_texts.append(u' ')
-                char_bboxes.append(BBox(char_bboxes[-1].x2,
-                                        char_bboxes[-1].y1,
-                                        bboxes[0].x1,
-                                        char_bboxes[-1].y2))
+                # bounding box of the space is put between
+                # the previous and current word
+                char_bboxes.append(BBox(prev_char_box.x2,
+                                        prev_char_box.y1,
+                                        curr_char_box.x1,
+                                        prev_char_box.y2))
                 char_fonts.append(char_fonts[-1])
+
+            # the bounding box of the last
+            # character in the current word
+            prev_char_box = bboxes[-1]
 
             # append the next word, its character
             # bounding boxes and font information
@@ -640,7 +651,7 @@ cdef class Line:
             char_bboxes.extend(bboxes)
             char_fonts.extend(word.char_fonts)
 
-            add_word_space = word.has_space_after
+            has_space_before = word.has_space_after
 
         self.text = u''.join(word_texts)
         self.char_bboxes = char_bboxes
@@ -721,7 +732,8 @@ cdef class Word:
             GooString *_text
             GooString *_font_name
             int        i, word_length
-            double     l, t, r, b, g
+            double     l, t, r, b
+            double     cr, cg, cb
 
         self.char_bboxes = []
         self.char_fonts = CompactList()
@@ -744,10 +756,10 @@ cdef class Word:
             else:
                 font_name = u'?'
 
-            word.getColor(&r, &g, &b)
+            word.getColor(&cr, &cg, &cb)
             self.char_fonts.append(FontInfo(font_name,
                                             word.getFontSize(),
-                                            Color(r, g, b)))
+                                            Color(cr, cg, cb)))
 
         # store the word's content
         _text = word.getText()
@@ -785,9 +797,11 @@ cdef class Word:
 
 
 cdef class BBox:
+    # Definition of the positions of the left, top, right,
+    # bottom edges of a bounding box, respectively.
     cdef double x1, y1, x2, y2
 
-    def __cinit__(self, double x1, double y1, double x2, double y2 ):
+    def __cinit__(self, double x1, double y1, double x2, double y2):
         self.x1 = x1
         self.x2 = x2
         self.y1 = y1
