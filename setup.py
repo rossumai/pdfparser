@@ -106,8 +106,8 @@ else:
     # that installs the needed cairo-specific headers.
     poppler_cairo_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
 
-setup(name='pdfparser',
-      version='1.0.0',
+setup(name='pdfparser-rossum',
+      version='1.1.0',
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',

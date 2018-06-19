@@ -5,15 +5,18 @@ Python binding for libpoppler - focused on text extration from PDF documents.
 
 Intended as an easy to use replacement for [pdfminer](https://github.com/euske/pdfminer),
 which provides much better perfomance (see below for short comparison) and is Python3 compatible.
+This packages is based on [izderadicka/pdfparser](https://github.com/izderadicka/pdfparser)
+and almost completely rewritten, so the package name changed to
+`pdfparser-rossum` to avoid conflicting builds.
 
 See this [article](http://zderadicka.eu/parsing-pdf-for-fun-and-profit-indeed-in-python/)
-for some comparisons with pdfminer and other approaches. 
+for some comparisons with pdfminer and other approaches.
 
 
 Binding is written in [cython](http://cython.org/).
 
-Requires recent libpoppler >= 0.40 - so I'd recommend to build it from source to get latest library, 
-but it works also with recent libpoppler library present in common linux distributions (then it requires 
+Requires recent libpoppler >= 0.40 - so I'd recommend to build it from source to get latest library,
+but it works also with recent libpoppler library present in common linux distributions (then it requires
 dev package to build). See below for installation instructions.
 
 
@@ -34,7 +37,7 @@ sudo apt-get install -y coreutils g++ gcc git libcairo2 libcairo2-dev libfontcon
 #test that it works
 python tests/dump_file.py test_docs/test1.pdf
 ```
-    
+
 
 ## Speed comparisons
 
