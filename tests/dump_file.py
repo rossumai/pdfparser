@@ -11,6 +11,8 @@ if __name__ == '__main__':
                         help='document filename')
     parser.add_argument('--chars', action='store_true',
                         help='print character details')
+    parser.add_argument('--words', action='store_true',
+                        help='print every word in a line on its own row')
     parser.add_argument('-f', '--first-page', type=int, default=1,
                         help='the page to start parsing from')
     parser.add_argument('-l', '--last-page', type=int,
@@ -32,12 +34,21 @@ if __name__ == '__main__':
             continue
         print 'Page', page.page_number, 'size = ', page.size
         for flow in page:
-            print ' ' * 1, 'Flow'
+            print '  ' * 1, 'Flow'
             for block in flow:
-                print ' ' * 2, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % block.bbox.as_tuple()
+                print '  ' * 2, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % block.bbox.as_tuple()
                 for line in block:
-                    print ' ' * 3, 'Line', line.text.encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.bbox.as_tuple()
-                    if args.chars:
+                    print '  ' * 3, 'Line',
+                    if not args.words:
+                        line.text.encode('UTF-8'),
+                    print '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.bbox.as_tuple()
+                    if args.words:
+                        for word in line:
+                            print '  ' * 4, word.text.encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.bbox.as_tuple()
+                            if args.chars:
+                                for i in range(len(word.text)):
+                                    print '  ' * 5, word.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.char_bboxes[i].as_tuple(), word.char_fonts[i].name, word.char_fonts[i].size, word.char_fonts[i].color
+                    if args.chars and not args.words:
                         for i in range(len(line.text)):
-                            print ' ' * 4, line.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.char_bboxes[i].as_tuple(), line.char_fonts[i].name, line.char_fonts[i].size, line.char_fonts[i].color
+                            print '  ' * 4, line.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.char_bboxes[i].as_tuple(), line.char_fonts[i].name, line.char_fonts[i].size, line.char_fonts[i].color
 
