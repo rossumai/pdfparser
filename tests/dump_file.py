@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 for line in block:
                     print '  ' * 3, 'Line',
                     if not args.words:
-                        line.text.encode('UTF-8'),
+                        print line.text.encode('UTF-8'),
                     print '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.bbox.as_tuple()
                     if args.words:
                         for word in line:
