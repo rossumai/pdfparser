@@ -38,14 +38,10 @@ python tests/dump_file.py test_docs/test1.pdf
 
 ## Building with Docker
 
+Build packages for Ubuntu 16.04/18.04 and Python 2/3.
+
 ```bash
-for ubuntu in 16.04 18.04; do
-    docker build --build-arg UBUNTU_VERSION=$ubuntu -t pdfparser:${ubuntu}-py2 .
-    # get the built artifacts out
-    artifact_dir=artifacts/${ubuntu}-py2
-    mkdir $artifact_dir
-    docker run --rm -v $(pwd)/artifact_dir:/artifacts --user $(id -u):$(id -g) pdfparser sh -c 'cp -r dist/* /artifacts'
-done
+./build_all_packages.sh
 ```
 
 ## Publishing
