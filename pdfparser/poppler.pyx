@@ -101,6 +101,7 @@ cdef extern from "PDFDoc.h":
         double getPageMediaHeight(int page)
         int getPageRotate(int page)
         Page *getPage(int page)
+        void replacePageDict(int pageNo, int rotate, PDFRectangle *mediaBox, PDFRectangle *cropBox);
 
 
 cdef extern from "Page.h":
@@ -115,6 +116,7 @@ cdef extern from "Page.h":
                        void *abortCheckCbkData, XRef *xrefA = NULL)
         void display(Gfx *gfx)
         PDFRectangle *getCropBox()
+        PDFRectangle *getMediaBox()
 
 
 cdef extern from "PDFDocFactory.h":
@@ -247,6 +249,12 @@ cdef class PopplerDocument:
 
     cdef int get_page_rotation(self, page_number):
         return self.document.getPageRotate(page_number + 1)
+
+    def set_page_rotation(self, page_number, rotation):
+        cdef Page *page = self.document.getPage(page_number + 1)
+        if page == NULL:
+            raise IndexError()
+        self.document.replacePageDict(page_number + 1, rotation, page.getMediaBox(), NULL)
 
     def get_images_bboxes(self, page_number):
         cdef CairoImageOutputDev *image_device = new CairoImageOutputDev()
@@ -448,6 +456,9 @@ cdef class PopplerPage:
         '''
         def __get__(self):
             return self.document.get_page_rotation(self.page_number)
+
+        def __set__(self, value):
+            self.document.set_page_rotation(self.page_number, value)
 
     cdef TextFlow *getFlows(self):
         return self.page.getFlows()
