@@ -38,18 +38,31 @@ python tests/dump_file.py test_docs/test1.pdf
 
 ## Building with Docker
 
-Build packages for Ubuntu 16.04/18.04 and Python 2/3.
+Example:
+
+```bash
+docker build --build-arg UBUNTU_VERSION=16.04 -t pdfparser:16.04 .
+```
+
+The build artifacts are inside the image in `/build/pdfparser/dist/`.
+
+You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
 
 ```bash
 ./build_all_packages.sh
 ```
 
+NOTE: we packages some `.so` files from Poppler and they depend on a particular
+version of Ubuntu.
+
 ## Publishing
 
 ```bash
 # for example
-twine upload -r myrepo artifacts/16.04-py2/*
+twine upload -r myrepo artifacts/16.04/*
 ```
+
+TODO: add some version tag to distinguish between the Ubuntu versions.
 
 ## Speed comparisons
 
