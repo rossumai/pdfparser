@@ -107,7 +107,7 @@ else:
     poppler_cairo_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
 
 setup(name='pdfparser-rossum',
-      version='1.1.0',
+      version='1.2.0',
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',
