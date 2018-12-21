@@ -34,6 +34,8 @@ RUN apt-get update \
         pkg-config \
         python-dev \
         python-pip \
+        python3-dev \
+        python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -51,17 +53,20 @@ RUN git clone --depth 1 --branch poppler-0.61.1 \
 RUN git clone --depth 1 --branch v1.15.4 \
         https://github.com/pygobject/pycairo.git \
     && cd pycairo \
-    && python setup.py install
+    && python setup.py install \
+    && python3 setup.py install
 
 # build pdfparser
 WORKDIR /build/pdfparser
 
 COPY requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt \
+    && pip3 install -r requirements.txt
 
 COPY . ./
 RUN cp /build/poppler/libpoppler.so.?? \
         /build/poppler/glib/libpoppler-glib.so.? \
         pdfparser/ \
     && POPPLER_CAIRO_ROOT='/build' python setup.py sdist \
-    && POPPLER_CAIRO_ROOT='/build' python setup.py bdist_wheel
+    && POPPLER_CAIRO_ROOT='/build' python setup.py bdist_wheel \
+    && POPPLER_CAIRO_ROOT='/build' python3 setup.py bdist_wheel
