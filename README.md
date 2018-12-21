@@ -38,6 +38,14 @@ sudo apt-get install -y coreutils g++ gcc git libcairo2 libcairo2-dev libfontcon
 python tests/dump_file.py test_docs/test1.pdf
 ```
 
+## Building with Docker
+
+```bash
+docker build -t pdfparser .
+# get the built artifacts out
+mkdir artifacts
+docker run --rm -v $(pwd)/artifacts:/artifacts --user $(id -u):$(id -g) pdfparser sh -c 'cp -r dist/* /artifacts'
+```
 
 ## Speed comparisons
 

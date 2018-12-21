@@ -1,0 +1,11 @@
+.dockerignore
+.eggs/
+.git/
+.gitlab-ci.yml
+.idea/
+.pytest_cache/
+dist/
+Dockerfile*
+**/__pycache__
+*.egg-info/
+*.pyc
