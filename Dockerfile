@@ -1,4 +1,6 @@
-FROM ubuntu:16.04
+# --build-arg UBUNTU_VERSION=16.04 or 18.04
+ARG UBUNTU_VERSION=
+FROM ubuntu:${UBUNTU_VERSION}
 
 # Ideally we'd install pdfparser via the following commands, but some
 # cairo-specific headers are just not included in any of poppler related packages

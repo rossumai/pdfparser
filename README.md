@@ -39,10 +39,20 @@ python tests/dump_file.py test_docs/test1.pdf
 ## Building with Docker
 
 ```bash
-docker build -t pdfparser .
-# get the built artifacts out
-mkdir artifacts
-docker run --rm -v $(pwd)/artifacts:/artifacts --user $(id -u):$(id -g) pdfparser sh -c 'cp -r dist/* /artifacts'
+for ubuntu in 16.04 18.04; do
+    docker build --build-arg UBUNTU_VERSION=$ubuntu -t pdfparser:${ubuntu}-py2 .
+    # get the built artifacts out
+    artifact_dir=artifacts/${ubuntu}-py2
+    mkdir $artifact_dir
+    docker run --rm -v $(pwd)/artifact_dir:/artifacts --user $(id -u):$(id -g) pdfparser sh -c 'cp -r dist/* /artifacts'
+done
+```
+
+## Publishing
+
+```bash
+# for example
+twine upload -r myrepo artifacts/16.04-py2/*
 ```
 
 ## Speed comparisons
