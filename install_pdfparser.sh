@@ -24,6 +24,7 @@ pip install -r requirements.txt
 # sudo apt-get install -y libpoppler-dev libpoppler-private-dev libpoppler-glib-dev python-cairo-dev
 # python setup.py install
 
+# latest: 1.18.0
 git clone --depth 1 --branch v1.15.4 https://github.com/pygobject/pycairo.git
 
 cp poppler/libpoppler.so.?? pdfparser/

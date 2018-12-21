@@ -20,7 +20,7 @@
 
 set -e
 
-apt-get install -y coreutils git gcc g++ cmake make libtool pkg-config gettext libfontconfig1-dev autoconf libzip-dev libtiff5-dev libopenjpeg-dev libcairo2-dev
+apt-get install -y coreutils git gcc g++ cmake make libtool pkg-config gettext libfontconfig1-dev autoconf libzip-dev libtiff5-dev libcairo2-dev
 git clone --depth 1 --branch poppler-0.61.1 https://anongit.freedesktop.org/git/poppler/poppler.git
 cd poppler
 cmake -DCMAKE_BUILD_TYPE=release -DENABLE_CPP=OFF -DENABLE_GLIB=ON -DENABLE_QT4=OFF -DENABLE_QT5=OFF  -DBUILD_GTK_TESTS=OFF -DENABLE_SPLASH=OFF -DENABLE_UTILS=OFF
