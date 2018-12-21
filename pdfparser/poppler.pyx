@@ -102,6 +102,12 @@ cdef extern from "PDFDoc.h":
         int getPageRotate(int page)
         Page *getPage(int page)
         void replacePageDict(int pageNo, int rotate, PDFRectangle *mediaBox, PDFRectangle *cropBox);
+        int saveAs(GooString *name, PDFWriteMode mode);
+
+    cpdef enum PDFWriteMode:
+        writeStandard,
+        writeForceRewrite,
+        writeForceIncremental,
 
 
 cdef extern from "Page.h":
@@ -298,6 +304,12 @@ cdef class PopplerDocument:
     def __dealloc__(self):
         if self.document != NULL:
             del self.document
+
+    def save_as(self, char *filename):
+        cdef GooString *fn = new GooString(filename)
+        result = self.document.saveAs(fn, writeStandard)
+        del fn
+        return result
 
     def page_count(self):
         return self.document.getNumPages()
