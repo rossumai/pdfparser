@@ -22,7 +22,7 @@ RUN apt-get update \
         libfontconfig1 \
         libfontconfig1-dev \
         libopenjp2-7 \
-        libopenjpeg-dev \
+        libopenjp2-7-dev \
         libtiff5 \
         libtiff5-dev \
         libtool \
