@@ -485,7 +485,7 @@ cdef class PopplerPage:
             left, top, right, bottom = bbox
 
         text = self.page.getText(left, top, right, bottom)
-        result = text.getCString().decode('UTF-8')
+        result = text.getCString()[:text.getLength()].decode('UTF-8')
         del text
 
         return result
@@ -786,7 +786,12 @@ cdef class Word:
 
         # store the word's content
         _text = word.getText()
-        self.text = _text.getCString().decode('UTF-8')
+        # NOTE: The text in rare cases may contain a NUL character which is NOT
+        # meant as a string-terminator. Since _text: GooString knows it's size
+        # we can convert char pointer to python bytes without NUL termination.
+        # In general we could just ignore the rest of the text but here it
+        # would break the assertions below.
+        self.text = _text.getCString()[:_text.getLength()].decode('UTF-8')
         del _text
 
         # store store the word's bounding box
