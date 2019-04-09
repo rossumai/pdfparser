@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
+VERSION=$1
 for ubuntu in 16.04 18.04; do
-    image=pdfparser:${ubuntu}
-    docker build --build-arg UBUNTU_VERSION=$ubuntu -t pdfparser:${ubuntu} .
+    image=pdfparser:${VERSION}-${ubuntu}
+    docker build --build-arg UBUNTU_VERSION=$ubuntu -t $image .
     # get the built artifacts out
     artifact_dir=artifacts/${ubuntu}
     mkdir -p $artifact_dir

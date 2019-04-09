@@ -38,10 +38,14 @@ python tests/dump_file.py test_docs/test1.pdf
 
 ## Building with Docker
 
+Make sure the proper version is set at `setup.py`. Ideally build the final
+releases from `master` branch.
+
 Example:
 
 ```bash
-docker build --build-arg UBUNTU_VERSION=16.04 -t pdfparser:16.04 .
+VERSION=1.2.0
+docker build --build-arg UBUNTU_VERSION=16.04 -t pdfparser:${VERSION}-16.04 .
 ```
 
 The build artifacts are inside the image in `/build/pdfparser/dist/`.
@@ -49,7 +53,7 @@ The build artifacts are inside the image in `/build/pdfparser/dist/`.
 You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
 
 ```bash
-./build_all_packages.sh
+./build_all_packages.sh 1.2.0
 ```
 
 The resulting artifacts will be located at host machine at
@@ -67,6 +71,8 @@ twine upload -r myrepo artifacts/16.04/*
 # publish sources only once (for 16.04)
 twine upload -r myrepo artifacts/18.04/*.whl
 ```
+
+Then tag the repo.
 
 ## Installing
 
