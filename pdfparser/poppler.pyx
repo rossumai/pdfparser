@@ -170,15 +170,15 @@ cdef extern from "TextOutputDev.h":
         void getColor(double *r, double *g, double *b)
 
     cdef cppclass TextFontInfo:
-        GooString *getFontName() 
+        GooString *getFontName()
         double getAscent()
         double getDescent()
 
-        GBool isFixedWidth() 
-        GBool isSerif() 
-        GBool isSymbolic() 
-        GBool isItalic() 
-        GBool isBold() 
+        GBool isFixedWidth()
+        GBool isSerif()
+        GBool isSymbolic()
+        GBool isItalic()
+        GBool isBold()
 
 
 cdef extern from "cairo.h":
@@ -483,7 +483,7 @@ cdef class PopplerPage:
             right, bottom = self.size
         else:
             left, top, right, bottom = bbox
-        
+
         text = self.page.getText(left, top, right, bottom)
         result = text.getCString().decode('UTF-8')
         del text
@@ -864,7 +864,7 @@ cdef class BBox:
 
         def __set__(self, double value):
             self.y1 = value
-            
+
     property y2:
         def __get__(self):
             return self.y2
