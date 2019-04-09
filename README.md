@@ -22,7 +22,7 @@ Available under GPL v3 or any later version license (`libpoppler` is also GPL).
 
 ## How to install
 
-Below or some instructions to install this package
+Below or some instructions to install this package. Better use Docker build.
 
 ```
 git clone --depth 1 https://github.com/rossumai/pdfparser.git
@@ -52,6 +52,10 @@ You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
 ./build_all_packages.sh
 ```
 
+The resulting artifacts will be located at host machine at
+`artifacts/{16.04,18.04}/*`. The wheels for Ubutnu 18.04 will have version with
+suffix, eg. `1.2.0_bionic`.
+
 NOTE: we packages some `.so` files from Poppler and they depend on a particular
 version of Ubuntu.
 
@@ -60,9 +64,18 @@ version of Ubuntu.
 ```bash
 # for example
 twine upload -r myrepo artifacts/16.04/*
+# publish sources only once (for 16.04)
+twine upload -r myrepo artifacts/18.04/*.whl
 ```
 
-TODO: add some version tag to distinguish between the Ubuntu versions.
+## Installing
+
+```
+# Ubuntu Xenial - latest version
+pip install pdfparser-rossum
+# Ubuntu Bionic - version has a specific and has to be explicit
+pip install pdfparser-rossum==1.2.0-bionic
+```
 
 ## Speed comparisons
 
