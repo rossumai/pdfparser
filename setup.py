@@ -105,6 +105,7 @@ else:
     # CairoFontEngine.h: No such file or directory, I do not think there is a package
     # that installs the needed cairo-specific headers.
     poppler_cairo_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
+    poppler_cairo_config['extra_compile_args'] = ["-std=c++11"]
 
 setup(name='pdfparser-rossum',
       version='1.2.1.dev',
