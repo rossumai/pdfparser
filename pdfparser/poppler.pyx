@@ -170,15 +170,15 @@ cdef extern from "TextOutputDev.h":
         void getColor(double *r, double *g, double *b)
 
     cdef cppclass TextFontInfo:
-        GooString *getFontName() 
+        GooString *getFontName()
         double getAscent()
         double getDescent()
 
-        GBool isFixedWidth() 
-        GBool isSerif() 
-        GBool isSymbolic() 
-        GBool isItalic() 
-        GBool isBold() 
+        GBool isFixedWidth()
+        GBool isSerif()
+        GBool isSymbolic()
+        GBool isItalic()
+        GBool isBold()
 
 
 cdef extern from "cairo.h":
@@ -483,9 +483,9 @@ cdef class PopplerPage:
             right, bottom = self.size
         else:
             left, top, right, bottom = bbox
-        
+
         text = self.page.getText(left, top, right, bottom)
-        result = text.getCString().decode('UTF-8')
+        result = goostring_to_unicode(text)
         del text
 
         return result
@@ -773,7 +773,7 @@ cdef class Word:
             # non-embedded fonts have `_font_name` set to NULL.
             if _font_name != NULL:
                 try:
-                    font_name = _font_name.getCString().decode('UTF-8')
+                    font_name = goostring_to_unicode(_font_name)
                 except:
                     font_name = u'%r' % _font_name.getCString()
             else:
@@ -786,7 +786,7 @@ cdef class Word:
 
         # store the word's content
         _text = word.getText()
-        self.text = _text.getCString().decode('UTF-8')
+        self.text = goostring_to_unicode(_text)
         del _text
 
         # store store the word's bounding box
@@ -864,7 +864,7 @@ cdef class BBox:
 
         def __set__(self, double value):
             self.y1 = value
-            
+
     property y2:
         def __get__(self):
             return self.y2
@@ -1014,3 +1014,17 @@ cdef class CompactList:
         '''
         def __get__(self):
             return float(len(self.items)) / len(self.index)
+
+
+cdef unicode goostring_to_unicode(GooString * goostring):
+    '''
+    Converts text from a GooString to unicode in a safer way.
+
+    The text in rare cases may contain a NUL character which is NOT
+    meant as a string-terminator. Since _text: GooString knows it's size
+    we can convert char pointer to python bytes without NUL termination.
+    In general we could just ignore the rest of the text but here it
+    would break the assertions below.
+    '''
+    size = goostring.getLength()
+    return goostring.getCString()[:size].decode('UTF-8')
