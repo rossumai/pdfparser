@@ -108,7 +108,7 @@ else:
     poppler_cairo_config['extra_compile_args'] = ["-std=c++11"]
 
 setup(name='pdfparser-rossum',
-      version='1.2.1.dev',
+      version='1.2.1',
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',
