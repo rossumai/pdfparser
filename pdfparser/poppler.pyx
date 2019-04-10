@@ -296,8 +296,8 @@ cdef class PopplerDocument:
             error_code = self.document.getErrorCode()
             del self.document
             self.document = NULL
-            raise RuntimeError('could not open document %s (error code: %d, message: %s)'
-                               % (filename, error_code, ERROR_CODE_MESSAGES.get(error_code, 'none')))
+            raise IOError('could not open document %s (error code: %d, message: %s)'
+                          % (filename, error_code, ERROR_CODE_MESSAGES.get(error_code, 'none')))
         self.keep_physical_layout = keep_physical_layout
         self.fixed_pitch = fixed_pitch
 
