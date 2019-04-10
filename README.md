@@ -41,14 +41,13 @@ python tests/dump_file.py test_docs/test1.pdf
 Make sure the proper version is set at `setup.py`. Ideally build the final
 releases from `master` branch.
 
-Example:
-
-```bash
-VERSION=1.2.0
-docker build --build-arg UBUNTU_VERSION=16.04 -t pdfparser:${VERSION}-16.04 .
-```
-
-The build artifacts are inside the image in `/build/pdfparser/dist/`.
+- in `develop` set the version to be released in `setup.py`, eg. `1.2.1.dev` to `1.2.1`
+- merge to `master`
+- build with the new version
+- tag `v1.2.1`
+- publish the artifacts to a custom PyPI repo using twine
+- checkout `develop`
+- increment to next dev version, eg. `1.2.2.dev`
 
 You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
 
@@ -57,13 +56,48 @@ You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
 ```
 
 The resulting artifacts will be located at host machine at
-`artifacts/{16.04,18.04}/*`. The wheels for Ubutnu 18.04 will have version with
+`artifacts/{16.04,18.04}/*`. The wheels for Ubuntu 18.04 will have version with
 suffix, eg. `1.2.0_bionic`.
 
-NOTE: we packages some `.so` files from Poppler and they depend on a particular
+Inside the scripts calls docker build in several Ubuntu versions:
+
+```bash
+VERSION=1.2.0
+UBUNTU=16.04
+docker build --build-arg UBUNTU_VERSION=${UBUNTU} -t pdfparser:${VERSION}-${UBUNTU} .
+```
+
+The build artifacts are inside the image in `/build/pdfparser/dist/`.
+
+
+NOTE: We package some `.so` files from Poppler and they depend on a particular
 version of Ubuntu.
 
 ## Publishing
+
+We'd like to publish the sources (`*.tgz`) and binary wheels (`*.whl`) to some
+PyPI repository. Unfortunately public PyPI doesn't allow linux binaries, but an
+own private PyPI can do it. Make sure you cleared `artifacts/` before building
+so that you publish only the latest version. This assumes you have configured
+`~/.pypirc` with you repo.
+
+Example `~/.pypirc` for custom repo:
+
+```
+[distutils]
+index-servers =
+    pypi
+    myrepo
+
+[pypi]
+
+[myrepo]
+repository=https://pypi.example.com/
+username=some_user
+password=some_secret_password
+```
+
+Publish:
 
 ```bash
 # for example
@@ -72,15 +106,52 @@ twine upload -r myrepo artifacts/16.04/*
 twine upload -r myrepo artifacts/18.04/*.whl
 ```
 
-Then tag the repo.
-
 ## Installing
+
+Configure our private repo once in `/etc/pip.conf` (or possibly for a user in
+`~/.pip/pip.conf`).
+
+Example config:
+
+```
+[global]
+extra-index-url=https://some_user:some_secret_password@pypi.example.com/simple/
+```
+
+Install:
 
 ```
 # Ubuntu Xenial - latest version
 pip install pdfparser-rossum
 # Ubuntu Bionic - version has a specific and has to be explicit
 pip install pdfparser-rossum==1.2.0-bionic
+```
+
+## Development
+
+It's possible to develop locally in within Docker. The latter may be easier as
+it isolates the environment. You just need to mount the source code from the
+host to the container. It assumes you have build the images (as above).
+
+```
+# Example
+
+# Change this...
+VERSION=1.2.1
+UBUNTU=16.04
+# Run docker container with local source code mounted in
+docker run --rm -it -v $(pwd):/build/pdfparser pdfparser:${VERSION}-${UBUNTU} bash
+# copy the poppler .so files again
+# TODO: make a separate step in Dockerfile to avoid this
+cp /build/poppler/libpoppler.so.?? /build/poppler/glib/libpoppler-glib.so.? pdfparser/
+export POPPLER_CAIRO_ROOT='/build'
+
+# edit your sources at the host machine...
+# build the cython sources and install in editable mode
+python setup.py develop
+# do whatever tests you need...
+tests/dump_file.py foo.pdf
+# rinse and repeat...
 ```
 
 ## Speed comparisons
