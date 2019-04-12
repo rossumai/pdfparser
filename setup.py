@@ -115,7 +115,7 @@ ext_config['extra_compile_args'] = ["-std=c++11"]
 ext_config['include_dirs'] += ['pycairo/']
 
 setup(name='pdfparser-rossum',
-      version='1.3.0.dev',
+      version='1.3.0.dev1',
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',
@@ -127,7 +127,7 @@ setup(name='pdfparser-rossum',
       long_description="Binding for libpoppler with a focus on fast text extraction from PDF documents and rendering into cairo.",
       keywords='poppler pdf parsing rendering mining extracting',
       url='https://github.com/rossumai/pdfparser',
-      install_requires=['cython'],
+      install_requires=['cython', 'pycairo>=0.16.0'],
       packages=['pdfparser'],
       include_package_data=True,
       zip_safe=False,
