@@ -2,6 +2,7 @@
 ARG UBUNTU_VERSION=
 FROM ubuntu:${UBUNTU_VERSION}
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update \
     && apt install -y software-properties-common \
     && LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:bzamecnik/poppler \
