@@ -22,13 +22,14 @@ from __future__ import print_function
 
 import os
 import subprocess
+import sys
 
+import cairo
 from setuptools import Extension, setup
 
 try:
     from Cython.Build import cythonize
 except ImportError:
-    import sys
     print('You need to install cython first - sudo pip install cython', file=sys.stderr)
     sys.exit(1)
 
@@ -81,31 +82,37 @@ def pkgconfig(*packages, **kw):
 
     return dict((k, list(set(v))) for k, v in config.items())
 
+def link_pycairo_header():
+    """
+    # When pycairo is installed via pip rather than apt, it's header pycairo.h or
+    # py3cairo.h in location like /usr/local/lib/python2.7/dist-packages/cairo/include
+    # rather than /usr/include/pycairo for python-cairo-dev and pkg-config cannot find it.
+    # Thus we have to add the path by hand.
+    # See also: https://github.com/pygobject/pycairo/pull/96/files
+    #
+    # In addition the Python2/3 header file name differs: pycairo.h vs py3cairo.h.
+    # The Cython code depends on one name and cannot change it dynamically.
+    # As a hack we symlink the original header to a local file with constant name.
+    """
+    source_dir = cairo.get_include()
+    # Since Cython source depends on pycairo.h and cannot make it conditional,
+    # let's copy the file locally to the same name for any Python as a workaround.
+    source_file = 'py3cairo.h' if sys.version_info[0] == 3 else 'pycairo.h'
+    source_path = os.path.join(source_dir, source_file)
+    target_dir = 'pycairo'
+    target_path = os.path.join(target_dir, 'pycairo.h')
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    if os.path.exists(target_path):
+        os.unlink(target_path)
+    os.symlink(source_path, target_path)
+    return target_dir
 
-# If a directory containing both poppler and pycairo is given by POPPLER_CAIRO_ROOT
-# they will be used, otherwise it is assumed both poppler and cairo are available
-# in form of distribution-based packages.
-POPPLER_CAIRO_ROOT = os.environ.get('POPPLER_CAIRO_ROOT', None)
+link_pycairo_header()
 
-if POPPLER_CAIRO_ROOT:
-    append_root = lambda path: os.path.join(POPPLER_CAIRO_ROOT, path)
-
-    package_data = {'pdfparser': ['*.so.*']}
-    poppler_cairo_config = {'extra_compile_args': ["-std=c++11"],
-                            'include_dirs': list(map(append_root, ['poppler', 'poppler/poppler', 'pycairo/cairo/'])),
-                            'library_dirs': list(map(append_root, ['poppler', 'poppler/glib'])),
-                            'libraries': ['poppler', 'poppler-glib'],
-                            'runtime_library_dirs': ['$ORIGIN']}
-
-    for k, v in pkgconfig('cairo').items():
-        poppler_cairo_config.setdefault(k, []).extend(v)
-else:
-    package_data = {}
-    # Still fails on a variation of this: pdfparser/poppler.cpp:602:29: fatal error:
-    # CairoFontEngine.h: No such file or directory, I do not think there is a package
-    # that installs the needed cairo-specific headers.
-    poppler_cairo_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
-    poppler_cairo_config['extra_compile_args'] = ["-std=c++11"]
+ext_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
+ext_config['extra_compile_args'] = ["-std=c++11"]
+ext_config['include_dirs'] += ['pycairo/']
 
 setup(name='pdfparser-rossum',
       version='1.2.2.dev',
@@ -122,10 +129,9 @@ setup(name='pdfparser-rossum',
       url='https://github.com/rossumai/pdfparser',
       install_requires=['cython'],
       packages=['pdfparser'],
-      package_data=package_data,
       include_package_data=True,
       zip_safe=False,
       ext_modules=cythonize(Extension('pdfparser.poppler',
                                       ['pdfparser/poppler.pyx'],
                                       language='c++',
-                                      **poppler_cairo_config)))
+                                      **ext_config)))
