@@ -115,7 +115,7 @@ ext_config['extra_compile_args'] = ["-std=c++11"]
 ext_config['include_dirs'] += ['pycairo/']
 
 setup(name='pdfparser-rossum',
-      version='1.2.2.dev',
+      version='1.3.0.dev',
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',
                    'Topic :: Text Processing',
