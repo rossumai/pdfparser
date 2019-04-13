@@ -18,11 +18,9 @@ RUN apt update \
 
 WORKDIR /pdfparser
 
-COPY requirements.txt requirements-src.txt ./
+COPY requirements.txt ./
 RUN pip install -r requirements.txt \
-    && pip3 install -r requirements.txt \
-    && pip install --no-binary :all: -r requirements-src.txt \
-    && pip3 install --no-binary :all: -r requirements-src.txt
+    && pip3 install -r requirements.txt
 
 COPY . ./
 RUN python setup.py sdist
