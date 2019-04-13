@@ -24,14 +24,14 @@ import os
 import subprocess
 import sys
 
-import cairo
 from setuptools import Extension, setup
 
+# cython is used only for sdist, then let's use the compiled .cpp file
 try:
     from Cython.Build import cythonize
+    USE_CYTHON = True
 except ImportError:
-    print('You need to install cython first - sudo pip install cython', file=sys.stderr)
-    sys.exit(1)
+    USE_CYTHON = False
 
 
 # https://gist.github.com/smidm/ff4a2c079fed97a92e9518bd3fa4797c
@@ -82,6 +82,7 @@ def pkgconfig(*packages, **kw):
 
     return dict((k, list(set(v))) for k, v in config.items())
 
+
 def link_pycairo_header():
     """
     # When pycairo is installed via pip rather than apt, it's header pycairo.h or
@@ -94,6 +95,8 @@ def link_pycairo_header():
     # The Cython code depends on one name and cannot change it dynamically.
     # As a hack we symlink the original header to a local file with constant name.
     """
+    import cairo
+
     source_dir = cairo.get_include()
     # Since Cython source depends on pycairo.h and cannot make it conditional,
     # let's copy the file locally to the same name for any Python as a workaround.
@@ -108,11 +111,24 @@ def link_pycairo_header():
     os.symlink(source_path, target_path)
     return target_dir
 
-link_pycairo_header()
 
-ext_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
-ext_config['extra_compile_args'] = ["-std=c++11"]
-ext_config['include_dirs'] += ['pycairo/']
+def make_ext_modules():
+    # https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compilation
+    link_pycairo_header()
+    ext_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
+    ext_config['include_dirs'] += ['pycairo/']
+    ext_config['extra_compile_args'] = ["-std=c++11"]
+
+    file_ext = 'pyx' if USE_CYTHON else 'cpp'
+
+    extensions = [Extension('pdfparser.poppler',
+                            ['pdfparser/poppler.{}'.format(file_ext)],
+                            language='c++',
+                            **ext_config)]
+    if USE_CYTHON:
+        extensions = cythonize(extensions)
+    return extensions
+
 
 setup(name='pdfparser-rossum',
       version='1.3.0.dev1',
@@ -127,11 +143,8 @@ setup(name='pdfparser-rossum',
       long_description="Binding for libpoppler with a focus on fast text extraction from PDF documents and rendering into cairo.",
       keywords='poppler pdf parsing rendering mining extracting',
       url='https://github.com/rossumai/pdfparser',
-      install_requires=['cython', 'pycairo>=0.16.0'],
+      install_requires=['pycairo>=0.16.0'],
       packages=['pdfparser'],
       include_package_data=True,
       zip_safe=False,
-      ext_modules=cythonize(Extension('pdfparser.poppler',
-                                      ['pdfparser/poppler.pyx'],
-                                      language='c++',
-                                      **ext_config)))
+      ext_modules=make_ext_modules())
