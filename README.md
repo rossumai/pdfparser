@@ -4,7 +4,7 @@ pdfparser
 Python binding for `libpoppler` - focused on text extraction from PDF documents.
 
 Intended as an easy to use replacement for [pdfminer](https://github.com/euske/pdfminer),
-which provides much better performance (see below for short comparison) and is Python3 compatible.
+which provides much better performance (see below for short comparison) and is Python 3 compatible.
 This packages is based on [izderadicka/pdfparser](https://github.com/izderadicka/pdfparser)
 and almost completely rewritten, so the package name changed to
 `pdfparser-rossum` to avoid conflicting builds.
@@ -12,31 +12,98 @@ and almost completely rewritten, so the package name changed to
 See this [article](http://zderadicka.eu/parsing-pdf-for-fun-and-profit-indeed-in-python/)
 for some comparisons with pdfminer and other approaches.
 
-Binding is written in [cython](http://cython.org/).
+The binding is written in [cython](http://cython.org/). It works with both
+Python 2 and 3 (but is not perfectly polished) and on Ubuntu 16.04 and 18.04.
+It depends on `poppler`, `cairo` and `pycairo`. For Ubuntu it is recommended to
+use packages of `poppler` from a PPA.
 
-Requires recent `libpoppler` >= 0.40 - so I'd recommend to build it from source to get latest library,
-but it works also with recent `libpoppler` library present in common linux distributions (then it requires
-dev package to build). See below for installation instructions.
+It is available under GPL v3 or any later version license (since `libpoppler` is
+also GPL).
 
-Available under GPL v3 or any later version license (`libpoppler` is also GPL).
+## Installing
 
-## How to install
+### Requirements
 
-Below or some instructions to install this package. Better use Docker build.
+It depends on `poppler >= 0.61.1,<= 0.71.0` (DEB: `libpoppler-dev`,
+`libpoppler-private-dev`, `libpoppler-glib-dev`) and `cairo` (`libcairo2-dev`).
+Note that it uses some private poppler headers that [poppler is not publishing
+](https://gitlab.freedesktop.org/poppler/poppler/merge_requests/252), but
+patched and backported poppler from a PPA provides them. Also it's recommended
+to use `libcairo2-dev>=1.14.8` which solves some deadlock bug.
+
+```bash
+# NOTE: Unicode locale needed on Ubuntu 16.04 due to a bug handling the key name.
+LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:bzamecnik/poppler
+apt install -y \
+    libcairo2-dev>=1.14.8 \
+    libpoppler-dev libpoppler-private-dev libpoppler-glib-dev \
+    pkg-config
+```
+
+Besides that there are [dependencies on Python packages](requirements.txt):
+`cython` at build time and `pycairo>=1.16.0` (installed from source, as wheel
+does not provide `pycairo.h` and `pycairo.pc` files).
+
+```bash
+# while building a source package
+pip install cython
+# at build and run time
+pip install pycairo>=1.16.0 --no-binary pycairo
+```
+
+Note that `pycairo` currently needs to be installed in a separate command before
+`pdfparser-rossum` as it's necessary at the build time and `pip` in not able to
+resolve the dependency graph.
+
+See the `Dockerfile` how to install the requirements. Such image might be useful
+for building the source package for distribution or for trying out pdfparser.
+
+### How to install via pip from source package
+
+Given a pre-built source package, it's easy to install, although pdfparser is
+not yet on PyPI.
 
 ```
-git clone --depth 1 https://github.com/rossumai/pdfparser.git
-cd pdfparser
+# from a private PyPI repo
+pip install pdfparser
+
+# from a source package
+pip install pdfarser-rossum-*.tar.gz
+```
+
+### Windows fonts
+
+Optionally you may want to install some old Windows fonts.
+
+```bash
 sudo ./install_fonts.sh
-sudo ./build_poppler.sh
-sudo apt-get install -y coreutils g++ gcc git libcairo2 libcairo2-dev libfontconfig1 libopenjpeg5 libtiff5 libzip4 pkg-config python-dev
-# If not in virtualenv, run install_pdfparser.sh with sudo
-./install_pdfparser.sh
-#test that it works
-python tests/dump_file.py test_docs/test1.pdf
 ```
 
-## Building with Docker
+### Building without docker
+
+If you have installed the build requirements on the host machine, you can just
+build the source package.
+
+```
+# produces eg. dist/pdfparser-rossum-1.3.0.dev2.tar.gz
+python setup.py sdist
+```
+
+### Building with Docker
+
+```bash
+VERSION=1.2.0
+UBUNTU=16.04
+docker build --build-arg UBUNTU_VERSION=${UBUNTU} -t pdfparser:${VERSION}-${UBUNTU} .
+
+# it's possible to mount to container to obtain the build artifact
+# or you can publish it to a PyPI repo from there using twine
+docker run --rm -it -v $(pwd)/dist:/build/pdfparser/dist pdfparser:${VERSION}-${UBUNTU} bash
+```
+
+The build artifact is inside the image in `/pdfparser/dist/`.
+
+#### Releasing
 
 Make sure the proper version is set at `setup.py`. Ideally build the final
 releases from `master` branch.
@@ -49,36 +116,12 @@ releases from `master` branch.
 - checkout `develop`
 - increment to next dev version, eg. `1.2.2.dev`
 
-You can build the packages for Ubuntu 16.04/18.04 and Python 2/3 via a script:
+### Publishing
 
-```bash
-./build_all_packages.sh 1.2.0
-```
+We'd like to publish the source package (`*.tar.gz`) to some PyPI repository,
+either the public one or to some private one.
 
-The resulting artifacts will be located at host machine at
-`artifacts/{16.04,18.04}/*`. The wheels for Ubuntu 18.04 will have version with
-suffix, eg. `1.2.0_bionic`.
-
-Inside the scripts calls docker build in several Ubuntu versions:
-
-```bash
-VERSION=1.2.0
-UBUNTU=16.04
-docker build --build-arg UBUNTU_VERSION=${UBUNTU} -t pdfparser:${VERSION}-${UBUNTU} .
-```
-
-The build artifacts are inside the image in `/build/pdfparser/dist/`.
-
-
-NOTE: We package some `.so` files from Poppler and they depend on a particular
-version of Ubuntu.
-
-## Publishing
-
-We'd like to publish the sources (`*.tgz`) and binary wheels (`*.whl`) to some
-PyPI repository. Unfortunately public PyPI doesn't allow linux binaries, but an
-own private PyPI can do it. Make sure you cleared `artifacts/` before building
-so that you publish only the latest version. This assumes you have configured
+This assumes you have configured
 `~/.pypirc` with you repo.
 
 Example `~/.pypirc` for custom repo:
@@ -100,51 +143,23 @@ password=some_secret_password
 Publish:
 
 ```bash
-# for example
-twine upload -r myrepo artifacts/16.04/*
-# publish sources only once (for 16.04)
-twine upload -r myrepo artifacts/18.04/*.whl
+pip install twine
+twine upload -r myrepo dist/pdfparser-rossum-*.tar.gz
 ```
 
-## Installing
+### Development
 
-Configure our private repo once in `/etc/pip.conf` (or possibly for a user in
-`~/.pip/pip.conf`).
-
-Example config:
-
-```
-[global]
-extra-index-url=https://some_user:some_secret_password@pypi.example.com/simple/
-```
-
-Install:
-
-```
-# Ubuntu Xenial - latest version
-pip install pdfparser-rossum
-# Ubuntu Bionic - version has a specific and has to be explicit
-pip install pdfparser-rossum==1.2.0-bionic
-```
-
-## Development
-
-It's possible to develop locally in within Docker. The latter may be easier as
-it isolates the environment. You just need to mount the source code from the
-host to the container. It assumes you have build the images (as above).
+It's possible to develop locally or within Docker. The latter isolates the
+environment but source code should be mounted from editing at the host.
 
 ```
 # Example
 
 # Change this...
-VERSION=1.2.1
 UBUNTU=16.04
+docker build --build-arg UBUNTU_VERSION=${UBUNTU} -t pdfparser:dev .
 # Run docker container with local source code mounted in
-docker run --rm -it -v $(pwd):/build/pdfparser pdfparser:${VERSION}-${UBUNTU} bash
-# copy the poppler .so files again
-# TODO: make a separate step in Dockerfile to avoid this
-cp /build/poppler/libpoppler.so.?? /build/poppler/glib/libpoppler-glib.so.? pdfparser/
-export POPPLER_CAIRO_ROOT='/build'
+docker run --rm -it -v $(pwd):/pdfparser pdfparser:dev bash
 
 # edit your sources at the host machine...
 # build the cython sources and install in editable mode
@@ -154,7 +169,53 @@ tests/dump_file.py foo.pdf
 # rinse and repeat...
 ```
 
-## Speed comparisons
+### Installing on macOS
+
+Tap with custom brew formulas for poppler
+[rossumai/homebrew-formulas](https://github.com/rossumai/homebrew-formulas) -
+older version 0.61.1 and private cairo headers.
+
+```
+brew tap rossumai/formulas
+brew install poppler@0.61.1
+brew install poppler-private-cairo-dev@0.61.1
+```
+
+Installing dependencies:
+
+```
+brew install pkg-config cairo libffi py2cairo
+```
+
+Installing an already build package:
+
+```
+pip install pdfparser-rossum
+```
+
+Building, installing and publishing a binary wheel:
+
+```
+git clone https://github.com/rossumai/pdfparser.git
+cd pdfparser/
+
+# https://github.com/otrv4/pidgin-otrng/issues/104#issuecomment-477640242
+export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig"
+
+python setup.py bdist_wheel
+pip install dist/pdfparser_rossum-1.2.1-cp27-cp27m-macosx_10_14_x86_64.whl
+twine upload -r myrepo dist/pdfparser_rossum-1.2.1-cp27-cp27m-macosx_10_14_x86_64.whl
+```
+
+## Usage
+
+See `tests/dump_file.py` for an example of usage.
+
+```bash
+python tests/dump_file.py test_docs/test1.pdf
+```
+
+### Speed comparisons
 
 |                             | pdfreader     | pdfminer      |speed-up factor|
 | --------------------------- | ------------- | ------------- |---------------|
@@ -166,22 +227,24 @@ tests/dump_file.py foo.pdf
 
 pdfparser code used in test
 
-    import pdfparser.poppler as pdf
-    import sys
+```python
+import pdfparser.poppler as pdf
+import sys
 
-    d=pdf.PopplerDocument(sys.argv[1])
+d=pdf.PopplerDocument(sys.argv[1])
 
-    print('No of pages', d.no_of_pages)
-    for p in d:
-        print('Page', p.page_no, 'size =', p.size)
-        for f in p:
-            print(' '*1,'Flow')
-            for b in f:
-                print(' '*2,'Block', 'bbox=', b.bbox.as_tuple())
-                for l in b:
-                    print(' '*3, l.text.encode('UTF-8'), '(%0.2f, %0.2f, %0.2f, %0.2f)'% l.bbox.as_tuple())
-                    #assert l.char_fonts.comp_ratio < 1.0
-                    for i in range(len(l.text)):
-                        print(l.text[i].encode('UTF-8'), '(%0.2f, %0.2f, %0.2f, %0.2f)'% l.char_bboxes[i].as_tuple(),\
-                            l.char_fonts[i].name, l.char_fonts[i].size, l.char_fonts[i].color,)
-                    print()
+print('No of pages', d.no_of_pages)
+for p in d:
+    print('Page', p.page_no, 'size =', p.size)
+    for f in p:
+        print(' '*1,'Flow')
+        for b in f:
+            print(' '*2,'Block', 'bbox=', b.bbox.as_tuple())
+            for l in b:
+                print(' '*3, l.text.encode('UTF-8'), '(%0.2f, %0.2f, %0.2f, %0.2f)'% l.bbox.as_tuple())
+                #assert l.char_fonts.comp_ratio < 1.0
+                for i in range(len(l.text)):
+                    print(l.text[i].encode('UTF-8'), '(%0.2f, %0.2f, %0.2f, %0.2f)'% l.char_bboxes[i].as_tuple(),\
+                        l.char_fonts[i].name, l.char_fonts[i].size, l.char_fonts[i].color,)
+                print()
+```
