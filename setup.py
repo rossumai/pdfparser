@@ -115,7 +115,8 @@ def link_pycairo_header():
 def make_ext_modules():
     # https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compilation
     link_pycairo_header()
-    ext_config = pkgconfig('poppler', 'poppler-glib', 'pycairo', 'cairo')
+    pycairo_pc = 'py3cairo' if sys.version_info[0] == 3 else 'pycairo'
+    ext_config = pkgconfig('poppler', 'poppler-glib', pycairo_pc, 'cairo')
     ext_config['include_dirs'] += ['pycairo/']
     ext_config['extra_compile_args'] = ["-std=c++11"]
 
