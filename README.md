@@ -173,15 +173,16 @@ tests/dump_file.py foo.pdf
 
 Tap with custom brew formulas for poppler
 [rossumai/homebrew-formulas](https://github.com/rossumai/homebrew-formulas) -
-older version 0.61.1 and private cairo headers.
+older version 0.62.0 and private cairo headers.
 
 ```
 brew tap rossumai/formulas
-brew install poppler@0.61.1
-brew install poppler-private-cairo-dev@0.61.1
+brew install poppler@0.62.0
+brew link poppler@0.62.0
 ```
 
-Installing dependencies:
+Installing dependencies. Let's install `py2cairo` via both `brew` and `pip`,
+so that `pkg-config` can find it's headers.
 
 ```
 brew install pkg-config cairo libffi py2cairo
@@ -190,10 +191,11 @@ brew install pkg-config cairo libffi py2cairo
 Installing an already build package:
 
 ```
+pip install -r requirements.txt
 pip install pdfparser-rossum
 ```
 
-Building, installing and publishing a binary wheel:
+Building and installing:
 
 ```
 git clone https://github.com/rossumai/pdfparser.git
@@ -202,9 +204,13 @@ cd pdfparser/
 # https://github.com/otrv4/pidgin-otrng/issues/104#issuecomment-477640242
 export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig"
 
-python setup.py bdist_wheel
-pip install dist/pdfparser_rossum-1.2.1-cp27-cp27m-macosx_10_14_x86_64.whl
-twine upload -r myrepo dist/pdfparser_rossum-1.2.1-cp27-cp27m-macosx_10_14_x86_64.whl
+pip install -r requirements.txt
+
+# for general usage
+pip install .
+
+# for development
+pip install -e .
 ```
 
 ## Usage
