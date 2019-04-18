@@ -85,20 +85,19 @@ If you have installed the build requirements on the host machine, you can just
 build the source package.
 
 ```
-# produces eg. dist/pdfparser-rossum-1.3.0.dev2.tar.gz
+# produces eg. dist/pdfparser-rossum-<VERSION>.tar.gz
 python setup.py sdist
 ```
 
 ### Building with Docker
 
 ```bash
-VERSION=1.2.0
-UBUNTU=16.04
-docker build --build-arg UBUNTU_VERSION=${UBUNTU} -t pdfparser:${VERSION}-${UBUNTU} .
+# UBUNTU_VERSION=16.04 or 18.04
+docker build --build-arg UBUNTU_VERSION=16.04 -t pdfparser .
 
 # it's possible to mount to container to obtain the build artifact
 # or you can publish it to a PyPI repo from there using twine
-docker run --rm -it -v $(pwd)/dist:/build/pdfparser/dist pdfparser:${VERSION}-${UBUNTU} bash
+docker run --rm -it -v $(pwd)/dist:/build/pdfparser/dist pdfparser bash
 ```
 
 The build artifact is inside the image in `/pdfparser/dist/`.
@@ -106,7 +105,7 @@ The build artifact is inside the image in `/pdfparser/dist/`.
 #### Releasing
 
 Make sure the proper version is set at `setup.py`. Ideally build the final
-releases from `master` branch.
+releases from `master` branch. For example last released branch is `1.2.0`.
 
 - in `develop` set the version to be released in `setup.py`, eg. `1.2.1.dev` to `1.2.1`
 - merge to `master`
