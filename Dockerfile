@@ -7,7 +7,7 @@ RUN apt update \
     && apt install -y software-properties-common \
     && LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:bzamecnik/poppler \
     && apt install -y \
-        libcairo2-dev>=1.14.8 \
+        libcairo2-dev \
         libpoppler-dev libpoppler-private-dev libpoppler-glib-dev \
         python-dev \
         python-pip \
