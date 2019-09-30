@@ -35,7 +35,7 @@ to use `libcairo2-dev>=1.14.8` which solves some deadlock bug.
 # NOTE: Unicode locale needed on Ubuntu 16.04 due to a bug handling the key name.
 LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:bzamecnik/poppler
 apt install -y \
-    libcairo2-dev>=1.14.8 \
+    libcairo2-dev \
     libpoppler-dev libpoppler-private-dev libpoppler-glib-dev \
     pkg-config
 ```
@@ -58,15 +58,20 @@ resolve the dependency graph.
 See the `Dockerfile` how to install the requirements. Such image might be useful
 for building the source package for distribution or for trying out pdfparser.
 
-### How to install via pip from source package
+### How to install via pip
 
-Given a pre-built source package, it's easy to install, although pdfparser is
-not yet on PyPI.
+Given a pre-built source package, it's easy to install.
 
+It's on PyPI: https://pypi.org/project/pdfparser-rossum/
+
+```bash
+# from a PyPI repo
+pip install pdfparser-rossum
 ```
-# from a private PyPI repo
-pip install pdfparser
 
+Possibly you can build an install from source:
+
+```bash
 # from a source package
 pip install pdfarser-rossum-*.tar.gz
 ```
@@ -88,6 +93,8 @@ build the source package.
 # produces eg. dist/pdfparser-rossum-<VERSION>.tar.gz
 python setup.py sdist
 ```
+
+It can be done fine even on macOS (see below).
 
 ### Building with Docker
 
@@ -180,17 +187,22 @@ brew install poppler@0.62.0
 brew link poppler@0.62.0
 ```
 
-Installing dependencies. Let's install `py2cairo` via both `brew` and `pip`,
-so that `pkg-config` can find it's headers.
+Installing dependencies.
 
 ```
-brew install pkg-config cairo libffi py2cairo
+brew install pkg-config cairo libffi
 ```
 
-Installing an already build package:
+Installing an already build package. Note that `pycairo` has to be installed
+from source, not as a binary wheel, so that it provides the headers and pkg-config file.
+
+With `libffi` from homebrew `PKG_CONFIG_PATH` needs to be provided,
+it's needed for installing both `pycairo` and `pdfparser-rossum`.
+See: https://github.com/otrv4/pidgin-otrng/issues/104#issuecomment-477640242
 
 ```
-pip install -r requirements.txt
+export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
+pip install pycairo>=1.16.0 --no-binary pycairo
 pip install pdfparser-rossum
 ```
 
@@ -200,9 +212,7 @@ Building and installing:
 git clone https://github.com/rossumai/pdfparser.git
 cd pdfparser/
 
-# https://github.com/otrv4/pidgin-otrng/issues/104#issuecomment-477640242
-export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig"
-
+export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
 pip install -r requirements.txt
 
 # for general usage
@@ -233,10 +243,11 @@ python tests/dump_file.py test_docs/test1.pdf
 pdfparser code used in test
 
 ```python
+from __future__ import print_function
 import pdfparser.poppler as pdf
 import sys
 
-d=pdf.PopplerDocument(sys.argv[1])
+d = pdf.PopplerDocument(sys.argv[1])
 
 print('No of pages', d.no_of_pages)
 for p in d:
