@@ -1,14 +1,17 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
+import os.path
+
+import psutil
 
 import pdfparser.poppler as pdf
-import os.path
-import psutil
 
 
 def get_total_memory():
-    '''
+    """
     Returns the total amount of virtual memory used by the process.
-    '''
+    """
     return psutil.Process().memory_info().vms
 
 
@@ -33,9 +36,9 @@ for i in range(10000):
 
     # Have memory consumption increased
     if (i_end_vm - i_start_vm) > 0:
-        print 'iteration: %d,' % i,
-        print 'memory: %d' % get_total_memory(), 'increase %d' % (i_end_vm - i_start_vm)
+        print('iteration: %d,' % i)
+        print('memory: %d' % get_total_memory(), 'increase %d' % (i_end_vm - i_start_vm))
 
 end_vm = get_total_memory()
 
-print "Memory consumed in total: %d" % (end_vm - start_vm)
+print("Memory consumed in total: %d" % (end_vm - start_vm))

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import argparse
 
@@ -72,15 +73,15 @@ if __name__=='__main__':
         for page in document:
             if page.pageid < first_page or page.pageid > last_page:
                 continue
-            print 'Page', page.pageid, 'size = ', (page.height, page.width)
+            print('Page', page.pageid, 'size = ', (page.height, page.width))
             for tbox in page:
                 if not isinstance(tbox, LTTextBox):
                     continue
-                print ' ' * 1, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % tbox.bbox
+                print(' ' * 1, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % tbox.bbox)
                 for obj in tbox:
-                    print ' ' * 2, 'Line', obj.get_text().encode('UTF-8')[:-1], '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % tbox.bbox
+                    print(' ' * 2, 'Line', obj.get_text().encode('UTF-8')[:-1], '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % tbox.bbox)
                     if args.chars:
                         for c in obj:
                             if not isinstance(c, LTChar):
                                 continue
-                            print ' ' * 3, c.get_text().encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % c.bbox, c.fontname.split('+')[-1], c.size
+                            print(' ' * 3, c.get_text().encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % c.bbox, c.fontname.split('+')[-1], c.size)

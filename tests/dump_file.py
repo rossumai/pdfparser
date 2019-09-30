@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import pdfparser.poppler as pdf
 import argparse
 
@@ -28,27 +28,27 @@ if __name__ == '__main__':
     first_page = (args.first_page - 1) or 0
     last_page = args.last_page or (document.page_count() - 1)
 
-    print 'Number of pages:', document.page_count()
+    print('Number of pages:', document.page_count())
     for page in document:
         if page.page_number < first_page or page.page_number > last_page:
             continue
-        print 'Page', page.page_number, 'size = ', page.size
+        print('Page', page.page_number, 'size = ', page.size)
         for flow in page:
-            print '  ' * 1, 'Flow'
+            print('  ' * 1, 'Flow')
             for block in flow:
-                print '  ' * 2, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % block.bbox.as_tuple()
+                print('  ' * 2, 'Block', '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % block.bbox.as_tuple())
                 for line in block:
-                    print '  ' * 3, 'Line',
+                    print('  ' * 3, 'Line',)
                     if not args.words:
-                        print line.text.encode('UTF-8'),
-                    print '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.bbox.as_tuple()
+                        print(line.text.encode('UTF-8'),)
+                    print('(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.bbox.as_tuple())
                     if args.words:
                         for word in line:
-                            print '  ' * 4, word.text.encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.bbox.as_tuple()
+                            print('  ' * 4, word.text.encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.bbox.as_tuple())
                             if args.chars:
                                 for i in range(len(word.text)):
-                                    print '  ' * 5, word.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.char_bboxes[i].as_tuple(), word.char_fonts[i].name, word.char_fonts[i].size, word.char_fonts[i].color
+                                    print('  ' * 5, word.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % word.char_bboxes[i].as_tuple(), word.char_fonts[i].name, word.char_fonts[i].size, word.char_fonts[i].color)
                     if args.chars and not args.words:
                         for i in range(len(line.text)):
-                            print '  ' * 4, line.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.char_bboxes[i].as_tuple(), line.char_fonts[i].name, line.char_fonts[i].size, line.char_fonts[i].color
+                            print('  ' * 4, line.text[i].encode('UTF-8'), '(bbox: %0.2f, %0.2f, %0.2f, %0.2f)' % line.char_bboxes[i].as_tuple(), line.char_fonts[i].name, line.char_fonts[i].size, line.char_fonts[i].color)
 
