@@ -118,3 +118,5 @@ target/
 *.out
 *.app
 .~lock*
+
+pycairo/pycairo.h
