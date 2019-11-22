@@ -34,10 +34,35 @@ to use `libcairo2-dev>=1.14.8` which solves some deadlock bug.
 ```bash
 # NOTE: Unicode locale needed on Ubuntu 16.04 due to a bug handling the key name.
 LC_ALL=C.UTF-8 add-apt-repository -y -u ppa:bzamecnik/poppler
-apt install -y \
+POPPLER_VER=0.62.0-2ubuntu2.8ppa~bionic1
+apt-get install -y \
     libcairo2-dev \
-    libpoppler-dev libpoppler-private-dev libpoppler-glib-dev \
+    libpoppler73=${POPPLER_VER} \
+    libpoppler-glib8=${POPPLER_VER} \
+    gir1.2-poppler-0.18=${POPPLER_VER} \
+    libpoppler-dev=${POPPLER_VER} \
+    libpoppler-private-dev=${POPPLER_VER} \
+    libpoppler-glib-dev=${POPPLER_VER} \
+    fontconfig \
     pkg-config
+```
+
+Some workarounds for virtualenv and MacOS - export those before
+installing pycairo and pdfparser-rossum.
+
+```
+# pycairo (for pdfparser) in virtualenv, make its pkg-config visible
+# https://gitlab.rossum.ai/rossum/pdfparser/issues/13#solution
+if [[ ! -z "$VIRTUAL_ENV" ]]; then
+    export PKG_CONFIG_PATH="${VIRTUAL_ENV}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+fi
+
+if [[ $(uname -s) == Darwin* ]]; then
+    # some workarounds on Mac
+
+    # libffi (for pdfparser), make its pkg-config visible
+    export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig:${PKG_CONFIG_PATH}"
+fi
 ```
 
 Besides that there are [dependencies on Python packages](requirements.txt):
@@ -236,7 +261,7 @@ python tests/dump_file.py test_docs/test1.pdf
 | --------------------------- | ------------- | ------------- |---------------|
 | tiny document (half page)   | 0.033s        | 0.121s        | 3.6 x         |
 | small document (5 pages)    | 0.141s        | 0.810s        | 5.7 x         |
-| medium document (55 pages)  | 1.166s        | 10.524s       | 9.0 x         |       
+| medium document (55 pages)  | 1.166s        | 10.524s       | 9.0 x         |
 | large document (436 pages)  | 10.581s       | 108.095s      | 10.2 x        |
 
 
@@ -249,7 +274,7 @@ import sys
 
 d = pdf.PopplerDocument(sys.argv[1])
 
-print('No of pages', d.no_of_pages)
+print('No of pages', d.page_count)
 for p in d:
     print('Page', p.page_no, 'size =', p.size)
     for f in p:
