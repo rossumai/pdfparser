@@ -484,6 +484,11 @@ cdef class PopplerPage:
     def get_text(self, bbox=None):
         cdef GooString *text
 
+        cdef double width, height
+        width, height = self.size
+        if width * height == 0:
+            return ''
+
         if bbox is None:
             left, top = 0, 0
             right, bottom = self.size
