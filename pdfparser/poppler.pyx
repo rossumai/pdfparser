@@ -266,6 +266,12 @@ cdef class PopplerDocument:
         cdef CairoImageOutputDev *image_device = new CairoImageOutputDev()
         cdef Page *page = self.document.getPage(page_number + 1)
 
+        cdef double width, height
+        width, height = self.get_page_size(page_number + 1)
+        # Calling createGfx() below fails for "empty" pages.
+        if width * height == 0:
+            return []
+
         cdef Gfx *gfx = page.createGfx(<OutputDev *> image_device, 72.0, 72.0, 0, False, True, -1, -1, -1, -1, False, NULL, NULL)
         cdef CairoImage *image
         cdef double x1, x2, y1, y2
